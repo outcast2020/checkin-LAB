@@ -1,6 +1,8 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzAm94At9t4R2oH0nkpnuooEhlgGZh4HzS7wJa6uUG6W_fSxdStQ4tiPMiy8OjTJOD4/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
+const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
+const DEFAULT_FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform?embedded=true";
 const DEFAULT_PROJECT_NAME = "Laboratório Cordel 2.0";
 const DEFAULT_TERMS_VERSION = "2026-03-v1";
 const DEFAULT_PRIVACY_NOTICE =
@@ -13,7 +15,9 @@ const state = {
     termsVersion: DEFAULT_TERMS_VERSION,
     termsUrl: FALLBACK_TERMS_URL,
     privacyNoticeShort: DEFAULT_PRIVACY_NOTICE,
-    projectUrl: DEFAULT_PROJECT_URL
+    projectUrl: DEFAULT_PROJECT_URL,
+    formPublishedUrl: DEFAULT_FORM_PUBLISHED_URL,
+    formEmbedUrl: DEFAULT_FORM_EMBED_URL
   }
 };
 
@@ -96,6 +100,7 @@ function hydrateUi() {
   setText("#privacyNotice", state.config.privacyNoticeShort);
   updateTermsLink();
   updateProjectLink();
+  updateSignupEmbed();
 }
 
 async function loadRemoteConfig() {
@@ -126,7 +131,9 @@ async function loadRemoteConfig() {
       termsVersion: cleanValue(data.termsVersion, DEFAULT_TERMS_VERSION),
       termsUrl: cleanValue(data.termsUrl, FALLBACK_TERMS_URL),
       privacyNoticeShort: cleanValue(data.privacyNoticeShort, DEFAULT_PRIVACY_NOTICE),
-      projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL)
+      projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL),
+      formPublishedUrl: cleanValue(data.formPublishedUrl, DEFAULT_FORM_PUBLISHED_URL),
+      formEmbedUrl: cleanValue(data.formEmbedUrl, DEFAULT_FORM_EMBED_URL)
     };
 
     hydrateUi();
@@ -426,6 +433,28 @@ function updateProjectLink() {
   link.href = cleanValue(state.config.projectUrl, DEFAULT_PROJECT_URL);
 }
 
+function updateSignupEmbed() {
+  const shell = document.querySelector("#signupEmbedShell");
+  const frame = document.querySelector("#signupEmbedFrame");
+  const note = document.querySelector("#signupEmbedNote");
+  const fallbackForm = document.querySelector("#signupForm");
+  const embedUrl = cleanValue(state.config.formEmbedUrl, DEFAULT_FORM_EMBED_URL);
+
+  if (!shell || !frame || !note || !fallbackForm) return;
+
+  if (hasUsableUrl(embedUrl)) {
+    frame.src = embedUrl;
+    shell.hidden = false;
+    fallbackForm.hidden = true;
+    note.textContent =
+      "Preencha o formulário abaixo. Depois da confirmação por email, você receberá uma senha aleatória para entrar.";
+    return;
+  }
+
+  shell.hidden = true;
+  fallbackForm.hidden = false;
+}
+
 function showFeedback(element, tone, message) {
   if (!element) return;
   element.dataset.tone = tone;
@@ -536,6 +565,11 @@ function hasUsableUrl(value) {
 
 function hasWebAppUrl() {
   return hasUsableUrl(WEB_APP_URL);
+}
+
+function cleanValue(value, fallback) {
+  const clean = String(value || "").trim();
+  return clean || fallback;
 }
 
 function cleanValue(value, fallback) {
