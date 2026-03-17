@@ -314,6 +314,19 @@ p {
   gap: 0.85rem;
 }
 
+.signup-embed {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.signup-embed iframe {
+  width: 100%;
+  min-height: 1100px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
 .field,
 .choice-group {
   display: grid;
@@ -586,6 +599,10 @@ p {
     grid-template-columns: auto 1fr;
     align-items: center;
   }
+
+  .signup-embed iframe {
+    min-height: 980px;
+  }
 }
 
 @media (max-width: 420px) {
@@ -595,5 +612,10 @@ p {
 
   .choice-group__options {
     grid-template-columns: 1fr;
+  }
+
+  .signup-embed iframe {
+    min-height: 1280px;
+    border-radius: 14px;
   }
 }
