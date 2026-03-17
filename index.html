@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="description"
+    content="Check-in ético e informado do Laboratório Cordel 2.0, com foco em consentimento, LGPD e boa experiência de acesso."
+  >
+  <title>CHECK-IN do Laboratório Cordel 2.0</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=Manrope:wght@400;500;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero__brand">
+        <img
+          class="hero__logo"
+          src="logo_cordel_color.png"
+          alt="Logo do Cordel 2.0"
+        >
+        <div class="hero__copy">
+          <p class="eyebrow">Check-in Ético e Informado</p>
+          <h1 id="projectName">CHECK-IN do Laboratório Cordel 2.0</h1>
+          <p class="hero__lead">
+            Um ponto de entrada simples, acolhedor e responsável para acesso, cadastro
+            e leitura do termo de uso do projeto.
+          </p>
+          <p class="hero__welcome">
+            Seja bem-vindo. Antes de seguir, conheça o propósito do Laboratório Cordel
+            2.0 e entre com tranquilidade em um ambiente pensado com cuidado, cultura
+            e responsabilidade.
+          </p>
+          <div class="hero__values" aria-label="Princípios do projeto">
+            <span>Ética</span>
+            <span>Protagonismo Humano</span>
+            <span>Equidade</span>
+          </div>
+          <div class="hero__actions">
+            <a
+              class="secondary-button"
+              id="projectLink"
+              href="https://www.cordel2pontozero.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Conheça o projeto
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <aside class="attention-card" aria-label="Mensagem central">
+        <strong>Atenção: nós cuidamos de você e queremos que esteja bem informado.</strong>
+        <p>
+          Antes de entrar ou se cadastrar, recomendamos a leitura do termo e da nota
+          de privacidade resumida abaixo.
+        </p>
+      </aside>
+    </header>
+
+    <main class="content">
+      <section class="privacy-card" aria-labelledby="privacyTitle">
+        <div class="privacy-card__intro">
+          <p class="section-tag">Privacidade Resumida</p>
+          <h2 id="privacyTitle">Seus dados são tratados com finalidade clara.</h2>
+          <p id="privacyNotice">
+            Coletamos dados mínimos de identificação, acesso e participação para o
+            funcionamento ético e organizado do Laboratório Cordel 2.0.
+          </p>
+        </div>
+
+        <div class="privacy-card__grid">
+          <article class="info-chip">
+            <h3>Quais dados são coletados</h3>
+            <p>
+              Nome, email, data de aniversário, instituição, vínculo com oficinas e
+              telefone com DDD.
+            </p>
+          </article>
+          <article class="info-chip">
+            <h3>Para qual finalidade</h3>
+            <p>
+              Identificação, acesso, registro de participação, consentimento e
+              organização do laboratório.
+            </p>
+          </article>
+          <article class="info-chip">
+            <h3>Leitura recomendada</h3>
+            <p>
+              Você pode consultar o PDF completo do termo antes de concordar com o uso
+              dos dados.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel-shell" aria-labelledby="panelTitle">
+        <div class="panel-shell__header">
+          <div>
+            <p class="section-tag">Acesso e Cadastro</p>
+            <h2 id="panelTitle">Escolha como deseja continuar</h2>
+          </div>
+          <p class="panel-shell__meta">
+            Termo vigente:
+            <strong id="termsVersion">2026-03-v1</strong>
+          </p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Fluxos do check-in">
+          <button class="tab-button is-active" id="tab-enter" type="button" role="tab" aria-selected="true" aria-controls="panel-enter">
+            Entrar
+          </button>
+          <button class="tab-button" id="tab-signup" type="button" role="tab" aria-selected="false" aria-controls="panel-signup">
+            Cadastro
+          </button>
+          <button class="tab-button" id="tab-terms" type="button" role="tab" aria-selected="false" aria-controls="panel-terms">
+            Termo de uso
+          </button>
+        </div>
+
+        <div class="tab-panels">
+          <section class="tab-panel is-active" id="panel-enter" role="tabpanel" aria-labelledby="tab-enter">
+            <div class="panel-card">
+              <div class="panel-card__header">
+                <h3>Entrar no laboratório</h3>
+                <p>
+                  Se você já confirmou seu email, entre com a última senha aleatória
+                  enviada para sua caixa de entrada.
+                </p>
+              </div>
+
+              <form id="loginForm" novalidate>
+                <div class="field">
+                  <label for="loginEmail">Email previamente registrado</label>
+                  <input
+                    id="loginEmail"
+                    name="email"
+                    type="email"
+                    inputmode="email"
+                    autocomplete="email"
+                    placeholder="voce@exemplo.com"
+                    required
+                  >
+                </div>
+
+                <div class="field">
+                  <label for="loginPassword">Senha</label>
+                  <input
+                    id="loginPassword"
+                    name="senha"
+                    type="password"
+                    maxlength="32"
+                    autocomplete="current-password"
+                    placeholder="Senha recebida por email"
+                  >
+                </div>
+
+                <label class="consent-box">
+                  <input id="loginConsent" name="consent" type="checkbox">
+                  <span>
+                    Li o termo de uso e compromisso e autorizo o tratamento dos dados
+                    informados para fins de acesso, registro e funcionamento do
+                    Laboratório Cordel 2.0.
+                  </span>
+                </label>
+
+                <div class="action-stack">
+                  <button class="primary-button" id="loginButton" type="submit" disabled>
+                    Entrar
+                  </button>
+                  <button class="secondary-button secondary-button--full" id="resetPasswordButton" type="button">
+                    Esqueci a senha / Quero mudar
+                  </button>
+                </div>
+
+                <p class="form-note">
+                  Após o cadastro, você receberá um link de confirmação por email antes
+                  de ativar o acesso. Depois disso, poderá gerar uma nova senha aleatória
+                  sempre que precisar.
+                </p>
+                <div class="feedback" id="loginFeedback" role="status" aria-live="polite"></div>
+              </form>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
+            <div class="panel-card">
+              <div class="panel-card__header">
+                <h3>Cadastro / Signup</h3>
+                <p>
+                  Preencha seus dados com atenção. O telefone é usado para registro e,
+                  no Apps Script, fica armazenado em hash com apenas os 4 últimos
+                  dígitos visíveis para conferência. Ao final, enviaremos um link de
+                  confirmação para o seu email.
+                </p>
+              </div>
+
+              <form id="signupForm" novalidate>
+                <div class="form-grid">
+                  <div class="field field--full">
+                    <label for="signupNome">Nome completo</label>
+                    <input
+                      id="signupNome"
+                      name="nome"
+                      type="text"
+                      autocomplete="name"
+                      placeholder="Seu nome completo"
+                      required
+                    >
+                  </div>
+
+                  <div class="field field--full">
+                    <label for="signupEmail">Email</label>
+                    <input
+                      id="signupEmail"
+                      name="email"
+                      type="email"
+                      inputmode="email"
+                      autocomplete="email"
+                      placeholder="voce@exemplo.com"
+                      required
+                    >
+                  </div>
+
+                  <div class="field">
+                    <label for="signupBirth">Data de aniversário</label>
+                    <input
+                      id="signupBirth"
+                      name="dataAniversario"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="10"
+                      placeholder="dd/mm/aaaa"
+                      required
+                    >
+                  </div>
+
+                  <div class="field">
+                    <label for="signupInstitution">Pertence a alguma instituição?</label>
+                    <input
+                      id="signupInstitution"
+                      name="instituicao"
+                      type="text"
+                      placeholder="Nome da instituição"
+                      required
+                    >
+                  </div>
+
+                  <fieldset class="choice-group field--full">
+                    <legend>Fez ou está nas oficinas do Cordel 2.0?</legend>
+                    <div class="choice-group__options">
+                      <label class="choice-pill">
+                        <input type="radio" name="oficinasCordel" value="SIM" required>
+                        <span>SIM</span>
+                      </label>
+                      <label class="choice-pill">
+                        <input type="radio" name="oficinasCordel" value="NAO" required>
+                        <span>NÃO</span>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <div class="field field--full">
+                    <label for="signupPhone">Telefone com DDD</label>
+                    <input
+                      id="signupPhone"
+                      name="telefone"
+                      type="tel"
+                      inputmode="tel"
+                      autocomplete="tel"
+                      maxlength="15"
+                      placeholder="(71) 99999-9999"
+                      required
+                    >
+                  </div>
+                </div>
+
+                <label class="consent-box consent-box--soft">
+                  <input id="signupConsent" name="consent" type="checkbox">
+                  <span>
+                    Confirmo que li ou tive acesso ao termo, compreendi a finalidade do
+                    tratamento dos dados e autorizo seu uso para participação no
+                    Laboratório Cordel 2.0.
+                  </span>
+                </label>
+
+                <button class="primary-button" id="signupButton" type="submit" disabled>
+                  Cadastrar e continuar
+                </button>
+
+                <p class="form-note">
+                  Depois da confirmação por email, você receberá uma senha aleatória no
+                  próprio email. Se quiser, poderá solicitar outra senha a qualquer
+                  momento.
+                </p>
+                <div class="feedback" id="signupFeedback" role="status" aria-live="polite"></div>
+              </form>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-terms" role="tabpanel" aria-labelledby="tab-terms" hidden>
+            <div class="panel-card panel-card--terms">
+              <div class="panel-card__header">
+                <h3>Termo de uso e compromisso</h3>
+                <p>
+                  A leitura do termo completo é recomendada antes do acesso. Abaixo está
+                  um resumo em linguagem direta para facilitar a decisão informada.
+                </p>
+              </div>
+
+              <div class="terms-summary">
+                <article>
+                  <h4>Compromisso do projeto</h4>
+                  <p>
+                    O laboratório busca um ambiente respeitoso, seguro, colaborativo e
+                    comprometido com ética, equidade e protagonismo humano.
+                  </p>
+                </article>
+                <article>
+                  <h4>Uso dos dados</h4>
+                  <p>
+                    Os dados informados são usados para identificação, controle de
+                    acesso, registro de participação, consentimento e organização do
+                    projeto.
+                  </p>
+                </article>
+                <article>
+                  <h4>Sua decisão</h4>
+                  <p>
+                    Você pode consultar o PDF completo do termo antes de marcar o aceite
+                    e seguir para o laboratório.
+                  </p>
+                </article>
+              </div>
+
+              <div class="terms-actions">
+                <a
+                  class="secondary-button"
+                  id="termsLink"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ler PDF completo
+                </a>
+                <p class="form-note" id="termsStatus">
+                  Configure a URL do PDF no Apps Script ou no arquivo app.js.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

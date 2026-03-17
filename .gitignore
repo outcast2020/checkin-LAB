@@ -1,0 +1,28 @@
+# Sistema e editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Dependências e build local
+node_modules/
+dist/
+build/
+
+# Arquivos locais e rascunhos
+*.bak
+*.tmp
+*.log
+*.csv
+*.xlsx
+*.ods
+*.sqlite
+*.zip
+backup/
+exports/
+rascunhos/
+
+# Variantes locais
+.env
+.env.*
