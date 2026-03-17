@@ -196,14 +196,26 @@
               <div class="panel-card__header">
                 <h3>Cadastro / Signup</h3>
                 <p>
-                  Preencha seus dados com atenção. O telefone é usado para registro e,
-                  no Apps Script, fica armazenado em hash com apenas os 4 últimos
-                  dígitos visíveis para conferência. Ao final, enviaremos um link de
-                  confirmação para o seu email.
+                  O cadastro pode ser preenchido diretamente no formulário seguro do
+                  Google, dentro do mesmo ecossistema do backend. Ao final, enviaremos
+                  um link de confirmação para o seu email.
                 </p>
               </div>
 
-              <form id="signupForm" novalidate>
+              <div class="signup-embed" id="signupEmbedShell" hidden>
+                <p class="form-note" id="signupEmbedNote">
+                  Carregando formulário de cadastro...
+                </p>
+                <iframe
+                  id="signupEmbedFrame"
+                  title="Formulário de cadastro do Laboratório Cordel 2.0"
+                  loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  src="about:blank">
+                </iframe>
+              </div>
+
+              <form id="signupForm" novalidate hidden>
                 <div class="form-grid">
                   <div class="field field--full">
                     <label for="signupNome">Nome completo</label>
@@ -360,6 +372,12 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
+
   </div>
 
   <script src="app.js" defer></script>
