@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjihS3euMqHemgURztLLRghvSnbz10pE1jGDXhHt-PzcDcsEnTA2edKzI1D_VWNqXY/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyvVmBDzek8lJbc98YISjTa7iPXseggCsJS4pBzgRVuP5yc7U605qhdYJqdW94ZonQN/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
@@ -22,6 +22,10 @@ const state = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (handleConfirmationBridge()) {
+    return;
+  }
+
   setupTabs();
   setupMasks();
   setupConsentLocks();
@@ -29,6 +33,54 @@ document.addEventListener("DOMContentLoaded", () => {
   hydrateUi();
   loadRemoteConfig();
 });
+
+function handleConfirmationBridge() {
+  const currentUrl = new URL(window.location.href);
+  const action = currentUrl.searchParams.get("action");
+  const email = currentUrl.searchParams.get("email");
+  const token = currentUrl.searchParams.get("token");
+
+  if (action !== "confirm" || !email || !token) {
+    return false;
+  }
+
+  renderRedirectState(
+    "Confirmando seu email...",
+    "Você será encaminhado para a validação segura do Laboratório Cordel 2.0."
+  );
+
+  const targetUrl = new URL(WEB_APP_URL);
+  targetUrl.searchParams.set("action", "confirm");
+  targetUrl.searchParams.set("email", email);
+  targetUrl.searchParams.set("token", token);
+
+  window.setTimeout(() => {
+    window.location.replace(targetUrl.toString());
+  }, 180);
+
+  return true;
+}
+
+function renderRedirectState(title, message) {
+  document.body.textContent = "";
+
+  const shell = document.createElement("main");
+  shell.className = "redirect-shell";
+
+  const card = document.createElement("section");
+  card.className = "redirect-shell__card";
+
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+
+  const paragraph = document.createElement("p");
+  paragraph.textContent = message;
+
+  card.appendChild(heading);
+  card.appendChild(paragraph);
+  shell.appendChild(card);
+  document.body.appendChild(shell);
+}
 
 function setupTabs() {
   const tabs = Array.from(document.querySelectorAll(".tab-button"));
