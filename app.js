@@ -571,8 +571,3 @@ function cleanValue(value, fallback) {
   const clean = String(value || "").trim();
   return clean || fallback;
 }
-
-function cleanValue(value, fallback) {
-  const clean = String(value || "").trim();
-  return clean || fallback;
-}
