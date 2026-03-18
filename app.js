@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyvVmBDzek8lJbc98YISjTa7iPXseggCsJS4pBzgRVuP5yc7U605qhdYJqdW94ZonQN/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxSLer1VVOnZX0yH1R5KbQFOj6iMo2jS0w52VachUcWbrn_xLx7owCLBbKEfuEcFXdw/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
@@ -46,17 +46,9 @@ function handleConfirmationBridge() {
 
   renderRedirectState(
     "Confirmando seu email...",
-    "Você será encaminhado para a validação segura do Laboratório Cordel 2.0."
+    "Estamos validando seu link com segurança no ambiente do Laboratório Cordel 2.0."
   );
-
-  const targetUrl = new URL(WEB_APP_URL);
-  targetUrl.searchParams.set("action", "confirm");
-  targetUrl.searchParams.set("email", email);
-  targetUrl.searchParams.set("token", token);
-
-  window.setTimeout(() => {
-    window.location.replace(targetUrl.toString());
-  }, 180);
+  runConfirmationJsonp(email, token);
 
   return true;
 }
@@ -80,6 +72,43 @@ function renderRedirectState(title, message) {
   card.appendChild(paragraph);
   shell.appendChild(card);
   document.body.appendChild(shell);
+}
+
+function runConfirmationJsonp(email, token) {
+  const callbackName = `labConfirmCallback_${Date.now()}`;
+  const script = document.createElement("script");
+  const targetUrl = new URL(WEB_APP_URL);
+
+  targetUrl.searchParams.set("action", "confirm_jsonp");
+  targetUrl.searchParams.set("email", email);
+  targetUrl.searchParams.set("token", token);
+  targetUrl.searchParams.set("callback", callbackName);
+
+  window[callbackName] = (payload) => {
+    delete window[callbackName];
+    script.remove();
+    renderConfirmationResult(payload);
+  };
+
+  script.onerror = () => {
+    delete window[callbackName];
+    script.remove();
+    renderRedirectState(
+      "Não foi possível validar o email",
+      "O serviço de confirmação não respondeu corretamente. Tente novamente pelo link do email ou solicite novo envio."
+    );
+  };
+
+  script.src = targetUrl.toString();
+  document.body.appendChild(script);
+}
+
+function renderConfirmationResult(payload) {
+  const safePayload = payload && typeof payload === "object" ? payload : {};
+  renderRedirectState(
+    safePayload.title || "Confirmação de email",
+    safePayload.message || "Seu link foi processado."
+  );
 }
 
 function setupTabs() {
