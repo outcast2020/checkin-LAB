@@ -1,6 +1,7 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxSLer1VVOnZX0yH1R5KbQFOj6iMo2jS0w52VachUcWbrn_xLx7owCLBbKEfuEcFXdw/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyStoqtfG0T4itjLu2uu9ZlS9N62S6ME7e7rwNHbbDBhMAi9BSfW8QzcPgGaEQMK8lc/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
+const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/labx9q2mz7vkp4r8tbn6wcy3hd5jfa1u0sln7e2gk9rvm4p8qz2hx";
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
 const DEFAULT_FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform?embedded=true";
 const DEFAULT_PROJECT_NAME = "Laboratório Cordel 2.0";
@@ -16,6 +17,7 @@ const state = {
     termsUrl: FALLBACK_TERMS_URL,
     privacyNoticeShort: DEFAULT_PRIVACY_NOTICE,
     projectUrl: DEFAULT_PROJECT_URL,
+    labUrl: DEFAULT_LAB_URL,
     formPublishedUrl: DEFAULT_FORM_PUBLISHED_URL,
     formEmbedUrl: DEFAULT_FORM_EMBED_URL
   }
@@ -213,6 +215,7 @@ async function loadRemoteConfig() {
       termsUrl: cleanValue(data.termsUrl, FALLBACK_TERMS_URL),
       privacyNoticeShort: cleanValue(data.privacyNoticeShort, DEFAULT_PRIVACY_NOTICE),
       projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL),
+      labUrl: cleanValue(data.labUrl, DEFAULT_LAB_URL),
       formPublishedUrl: cleanValue(data.formPublishedUrl, DEFAULT_FORM_PUBLISHED_URL),
       formEmbedUrl: cleanValue(data.formEmbedUrl, DEFAULT_FORM_EMBED_URL)
     };
@@ -262,7 +265,6 @@ async function handleLoginSubmit(event) {
   }
 
   const payload = {
-    action: "login",
     email,
     senha,
     consentAccepted: true,
@@ -274,7 +276,7 @@ async function handleLoginSubmit(event) {
   setLoading(button, true, "Entrando...");
 
   try {
-    const data = await postJson(payload);
+    const data = await jsonpRequest("login_jsonp", payload);
 
     if (!data?.ok) {
       const message =
@@ -299,7 +301,7 @@ async function handleLoginSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço. Se o site estiver em outro domínio, confirme a liberação de CORS do Web App."
+      "Falha de comunicação com o serviço de acesso. Solicite uma nova senha e tente novamente em instantes."
     );
   } finally {
     setLoading(button, false, "Entrar");
@@ -446,8 +448,7 @@ async function handleResetPasswordRequest() {
   setLoading(button, true, "Enviando nova senha...");
 
   try {
-    const data = await postJson({
-      action: "reset_password",
+    const data = await jsonpRequest("reset_password_jsonp", {
       email,
       page: "checkin",
       userAgent: navigator.userAgent
@@ -482,8 +483,42 @@ async function postJson(payload) {
   return response.json();
 }
 
+function jsonpRequest(action, params) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `labJsonp_${action}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const script = document.createElement("script");
+    const url = new URL(WEB_APP_URL);
+
+    url.searchParams.set("action", action);
+    url.searchParams.set("callback", callbackName);
+
+    Object.entries(params || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      url.searchParams.set(key, String(value));
+    });
+
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+
+    window[callbackName] = (payload) => {
+      cleanup();
+      resolve(payload);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("JSONP_REQUEST_FAILED"));
+    };
+
+    script.src = url.toString();
+    document.body.appendChild(script);
+  });
+}
+
 function safeRedirect(url) {
-  const target = cleanValue(url, "/laboratorio");
+  const target = cleanValue(url, state.config.labUrl || DEFAULT_LAB_URL);
   window.setTimeout(() => {
     window.location.href = target;
   }, REDIRECT_DELAY_MS);
