@@ -2,6 +2,8 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5MD5JZklOymXSAu_d
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/labx9q2mz7vkp4r8tbn6wcy3hd5jfa1u0sln7e2gk9rvm4p8qz2hx";
+const DEFAULT_CHECKIN_URL =
+  typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
 const DEFAULT_FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform?embedded=true";
 const DEFAULT_PROJECT_NAME = "Laboratório Cordel 2.0";
@@ -18,13 +20,15 @@ const state = {
     privacyNoticeShort: DEFAULT_PRIVACY_NOTICE,
     projectUrl: DEFAULT_PROJECT_URL,
     labUrl: DEFAULT_LAB_URL,
+    checkinUrl: DEFAULT_CHECKIN_URL,
     formPublishedUrl: DEFAULT_FORM_PUBLISHED_URL,
     formEmbedUrl: DEFAULT_FORM_EMBED_URL
-  }
+  },
+  quoteTimerId: null
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (handleConfirmationBridge()) {
+  if (handleBridgeRoute()) {
     return;
   }
 
@@ -36,26 +40,41 @@ document.addEventListener("DOMContentLoaded", () => {
   loadRemoteConfig();
 });
 
-function handleConfirmationBridge() {
+function handleBridgeRoute() {
   const currentUrl = new URL(window.location.href);
   const action = currentUrl.searchParams.get("action");
   const email = currentUrl.searchParams.get("email");
   const token = currentUrl.searchParams.get("token");
 
-  if (action !== "confirm" || !email || !token) {
-    return false;
+  if (action === "confirm" && email && token) {
+    startConfirmationBridge(email, token);
+    return true;
   }
 
-  renderRedirectState(
-    "Confirmando seu email...",
-    "Estamos validando seu link com segurança no ambiente do Laboratório Cordel 2.0."
-  );
-  runConfirmationJsonp(email, token);
+  if (action === "set_password" && email && token) {
+    renderPasswordSetupBridge(email, token);
+    return true;
+  }
 
-  return true;
+  return false;
 }
 
-function renderRedirectState(title, message) {
+function startConfirmationBridge(email, token) {
+  renderBridgeState({
+    eyebrow: "Confirmação em andamento",
+    title: "Validando seu email com cuidado",
+    message:
+      "Estamos confirmando seu acesso em ambiente seguro para preparar a próxima etapa do Laboratório Cordel 2.0.",
+    quote: getBridgeQuote(0),
+    loading: true,
+    actions: []
+  });
+  rotateBridgeQuotes();
+  runConfirmationJsonp(email, token);
+}
+
+function renderBridgeState(options) {
+  stopBridgeQuoteRotation();
   document.body.textContent = "";
 
   const shell = document.createElement("main");
@@ -64,14 +83,75 @@ function renderRedirectState(title, message) {
   const card = document.createElement("section");
   card.className = "redirect-shell__card";
 
+  if (options.eyebrow) {
+    const eyebrow = document.createElement("p");
+    eyebrow.className = "redirect-shell__eyebrow";
+    eyebrow.textContent = options.eyebrow;
+    card.appendChild(eyebrow);
+  }
+
   const heading = document.createElement("h1");
-  heading.textContent = title;
+  heading.textContent = options.title;
 
   const paragraph = document.createElement("p");
-  paragraph.textContent = message;
+  paragraph.className = "redirect-shell__message";
+  paragraph.textContent = options.message;
 
   card.appendChild(heading);
   card.appendChild(paragraph);
+
+  if (options.loading) {
+    const loader = document.createElement("div");
+    loader.className = "redirect-shell__loader";
+    card.appendChild(loader);
+  }
+
+  if (options.quote) {
+    const quote = document.createElement("blockquote");
+    quote.className = "redirect-shell__quote";
+    quote.id = "bridgeQuote";
+    quote.textContent = options.quote;
+    card.appendChild(quote);
+  }
+
+  if (options.note) {
+    const note = document.createElement("p");
+    note.className = "redirect-shell__note";
+    note.textContent = options.note;
+    card.appendChild(note);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "redirect-shell__actions";
+
+  (options.actions || []).forEach((action) => {
+    if (!action || !action.label) return;
+
+    if (action.type === "button") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `redirect-shell__button ${action.tone || "ghost"}`;
+      button.textContent = action.label;
+      button.addEventListener("click", action.onClick);
+      actions.appendChild(button);
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.className = `redirect-shell__button ${action.tone || "ghost"}`;
+    link.textContent = action.label;
+    link.href = action.href || "#";
+    if (action.newTab) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+    actions.appendChild(link);
+  });
+
+  if (actions.children.length) {
+    card.appendChild(actions);
+  }
+
   shell.appendChild(card);
   document.body.appendChild(shell);
 }
@@ -95,10 +175,20 @@ function runConfirmationJsonp(email, token) {
   script.onerror = () => {
     delete window[callbackName];
     script.remove();
-    renderRedirectState(
-      "Não foi possível validar o email",
-      "O serviço de confirmação não respondeu corretamente. Tente novamente pelo link do email ou solicite novo envio."
-    );
+    renderBridgeState({
+      eyebrow: "Confirmação indisponível",
+      title: "Não foi possível validar o email",
+      message:
+        "O serviço de confirmação não respondeu corretamente. Tente novamente pelo link do email ou solicite um novo envio no check-in.",
+      quote: getBridgeQuote(1),
+      actions: buildBridgeActions({
+        primaryLabel: "Voltar ao check-in",
+        primaryUrl: state.config.checkinUrl || DEFAULT_CHECKIN_URL,
+        secondaryLabel: "Conhecer o projeto",
+        secondaryUrl: state.config.projectUrl || DEFAULT_PROJECT_URL,
+        allowClose: true
+      })
+    });
   };
 
   script.src = targetUrl.toString();
@@ -107,10 +197,254 @@ function runConfirmationJsonp(email, token) {
 
 function renderConfirmationResult(payload) {
   const safePayload = payload && typeof payload === "object" ? payload : {};
-  renderRedirectState(
-    safePayload.title || "Confirmação de email",
-    safePayload.message || "Seu link foi processado."
+
+  renderBridgeState({
+    eyebrow: safePayload.ok ? "Acesso preparado" : "Atenção",
+    title: safePayload.title || "Confirmação de email",
+    message: safePayload.message || "Seu link foi processado.",
+    quote: getBridgeQuote(safePayload.ok ? 2 : 3),
+    actions: buildBridgeActions({
+      primaryLabel: safePayload.primaryActionLabel,
+      primaryUrl: safePayload.primaryActionUrl,
+      secondaryLabel: safePayload.secondaryActionLabel,
+      secondaryUrl: safePayload.secondaryActionUrl,
+      allowClose: true,
+      closeLabel: safePayload.closeLabel
+    })
+  });
+}
+
+function renderPasswordSetupBridge(email, token) {
+  stopBridgeQuoteRotation();
+  document.body.textContent = "";
+
+  const shell = document.createElement("main");
+  shell.className = "redirect-shell";
+
+  const card = document.createElement("section");
+  card.className = "redirect-shell__card redirect-shell__card--form";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "redirect-shell__eyebrow";
+  eyebrow.textContent = "Escolha sua senha";
+
+  const heading = document.createElement("h1");
+  heading.textContent = "Defina seu acesso com segurança";
+
+  const message = document.createElement("p");
+  message.className = "redirect-shell__message";
+  message.textContent =
+    "Crie uma senha com pelo menos 10 caracteres, usando letras e números. Depois disso, seu acesso ficará pronto para entrar.";
+
+  const quote = document.createElement("blockquote");
+  quote.className = "redirect-shell__quote";
+  quote.textContent = getBridgeQuote(4);
+
+  const form = document.createElement("form");
+  form.className = "password-bridge-form";
+  form.method = "POST";
+  form.action = WEB_APP_URL;
+
+  addHiddenInput(form, "action", "set_password");
+  addHiddenInput(form, "email", email);
+  addHiddenInput(form, "token", token);
+  addHiddenInput(form, "page", "checkin_set_password");
+
+  const passwordField = createPasswordField("Nova senha", "senha", "Crie sua senha");
+  const confirmationField = createPasswordField(
+    "Confirmar senha",
+    "senhaConfirmacao",
+    "Repita a nova senha"
   );
+
+  const helper = document.createElement("p");
+  helper.className = "redirect-shell__note";
+  helper.textContent =
+    "Dica: combine uma frase curta que faça sentido para você com números. Exemplo de estrutura: cordel2026lab.";
+
+  const feedback = document.createElement("div");
+  feedback.className = "feedback";
+
+  const actions = document.createElement("div");
+  actions.className = "redirect-shell__actions";
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "redirect-shell__button primary";
+  submit.textContent = "Salvar minha senha";
+
+  const back = document.createElement("a");
+  back.className = "redirect-shell__button secondary";
+  back.href = state.config.checkinUrl || DEFAULT_CHECKIN_URL || DEFAULT_PROJECT_URL;
+  back.textContent = "Voltar ao check-in";
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "redirect-shell__button ghost";
+  close.textContent = "Fechar janela";
+  close.addEventListener("click", closeBridgeWindow);
+
+  actions.appendChild(submit);
+  actions.appendChild(back);
+  actions.appendChild(close);
+
+  form.appendChild(passwordField);
+  form.appendChild(confirmationField);
+  form.appendChild(helper);
+  form.appendChild(feedback);
+  form.appendChild(actions);
+
+  form.addEventListener("submit", (event) => {
+    const password = form.elements.senha.value.trim();
+    const confirmation = form.elements.senhaConfirmacao.value.trim();
+    const validationMessage = validatePasswordChoice(password, confirmation);
+
+    if (validationMessage) {
+      event.preventDefault();
+      showFeedback(feedback, "error", validationMessage);
+      return;
+    }
+
+    showFeedback(feedback, "success", "Enviando sua nova senha com segurança...");
+  });
+
+  card.appendChild(eyebrow);
+  card.appendChild(heading);
+  card.appendChild(message);
+  card.appendChild(quote);
+  card.appendChild(form);
+  shell.appendChild(card);
+  document.body.appendChild(shell);
+}
+
+function addHiddenInput(form, name, value) {
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = name;
+  input.value = value;
+  form.appendChild(input);
+}
+
+function createPasswordField(labelText, name, placeholder) {
+  const field = document.createElement("label");
+  field.className = "password-bridge-form__field";
+
+  const label = document.createElement("span");
+  label.textContent = labelText;
+
+  const input = document.createElement("input");
+  input.type = "password";
+  input.name = name;
+  input.placeholder = placeholder;
+  input.autocomplete = "new-password";
+  input.minLength = 10;
+  input.required = true;
+
+  field.appendChild(label);
+  field.appendChild(input);
+  return field;
+}
+
+function validatePasswordChoice(password, confirmation) {
+  if (!password || !confirmation) {
+    return "Preencha e confirme sua nova senha.";
+  }
+
+  if (password !== confirmation) {
+    return "Os dois campos de senha precisam ser iguais.";
+  }
+
+  if (password.length < 10) {
+    return "Sua senha precisa ter pelo menos 10 caracteres.";
+  }
+
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return "Use ao menos uma letra e um número na nova senha.";
+  }
+
+  return "";
+}
+
+function buildBridgeActions(options) {
+  const actions = [];
+
+  if (options.primaryLabel && options.primaryUrl) {
+    actions.push({
+      label: options.primaryLabel,
+      href: options.primaryUrl,
+      tone: "primary"
+    });
+  }
+
+  if (options.secondaryLabel && options.secondaryUrl) {
+    actions.push({
+      label: options.secondaryLabel,
+      href: options.secondaryUrl,
+      tone: "secondary",
+      newTab:
+        /^https?:\/\//i.test(options.secondaryUrl) &&
+        options.secondaryUrl !== (state.config.checkinUrl || DEFAULT_CHECKIN_URL)
+    });
+  }
+
+  if (options.allowClose) {
+    actions.push({
+      label: options.closeLabel || "Fechar janela",
+      type: "button",
+      tone: "ghost",
+      onClick: closeBridgeWindow
+    });
+  }
+
+  return actions;
+}
+
+function closeBridgeWindow() {
+  window.close();
+  window.setTimeout(() => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    window.location.href = state.config.checkinUrl || DEFAULT_CHECKIN_URL || DEFAULT_PROJECT_URL;
+  }, 120);
+}
+
+function rotateBridgeQuotes() {
+  stopBridgeQuoteRotation();
+
+  const quoteElement = document.querySelector("#bridgeQuote");
+  if (!quoteElement) return;
+
+  const quotes = getBridgeQuotes();
+  let index = 0;
+
+  state.quoteTimerId = window.setInterval(() => {
+    index = (index + 1) % quotes.length;
+    quoteElement.textContent = quotes[index];
+  }, 3200);
+}
+
+function stopBridgeQuoteRotation() {
+  if (state.quoteTimerId) {
+    window.clearInterval(state.quoteTimerId);
+    state.quoteTimerId = null;
+  }
+}
+
+function getBridgeQuote(index) {
+  const quotes = getBridgeQuotes();
+  return quotes[index % quotes.length];
+}
+
+function getBridgeQuotes() {
+  return [
+    "Inspirado em Paulo Freire: entrar em um processo de aprendizagem também é um gesto de autonomia e cuidado.",
+    "Inspirado em Conceição Evaristo: cada presença que chega soma memória, voz e futuro ao que estamos construindo.",
+    "Inspirado em Paulo Freire: informar com clareza também é parte do respeito que sustenta qualquer experiência transformadora.",
+    "Inspirado em Conceição Evaristo: seguimos com delicadeza, porque toda travessia merece acolhimento e escuta.",
+    "Inspirado em Paulo Freire e Conceição Evaristo: sua escolha de senha também é um gesto de autoria sobre o próprio caminho."
+  ];
 }
 
 function setupTabs() {
@@ -216,6 +550,7 @@ async function loadRemoteConfig() {
       privacyNoticeShort: cleanValue(data.privacyNoticeShort, DEFAULT_PRIVACY_NOTICE),
       projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL),
       labUrl: cleanValue(data.labUrl, DEFAULT_LAB_URL),
+      checkinUrl: cleanValue(data.checkinUrl, DEFAULT_CHECKIN_URL),
       formPublishedUrl: cleanValue(data.formPublishedUrl, DEFAULT_FORM_PUBLISHED_URL),
       formEmbedUrl: cleanValue(data.formEmbedUrl, DEFAULT_FORM_EMBED_URL)
     };
@@ -285,8 +620,8 @@ async function handleLoginSubmit(event) {
           : data?.code === "EMAIL_NAO_CONFIRMADO"
             ? "Seu cadastro está pendente de confirmação. Verifique o email recebido e ative seu acesso antes de entrar."
             : data?.code === "SENHA_NAO_CONFIGURADA"
-              ? "Sua senha ainda não está pronta. Use a opção 'Esqueci a senha / Quero mudar' para receber uma nova senha por email."
-          : data?.message || "Não foi possível validar seu acesso agora.";
+              ? "Sua senha ainda não foi definida. Use a opção 'Esqueci a senha / Quero mudar' para receber um link e escolher sua senha."
+              : data?.message || "Não foi possível validar seu acesso agora.";
       showFeedback(feedback, "error", message);
       return;
     }
@@ -301,7 +636,7 @@ async function handleLoginSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço de acesso. Solicite uma nova senha e tente novamente em instantes."
+      "Falha de comunicação com o serviço de acesso. Solicite um novo link de senha e tente novamente em instantes."
     );
   } finally {
     setLoading(button, false, "Entrar");
@@ -406,8 +741,8 @@ async function handleSignupSubmit(event) {
 
     const successMessage =
       data?.code === "SIGNUP_PENDING_EMAIL_RESENT"
-        ? "Seu cadastro já existia e reenviamos o link de confirmação. Verifique seu email para ativar o login."
-        : "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá uma senha aleatória para entrar.";
+        ? "Seu cadastro já existia e reenviamos o link de confirmação. Verifique seu email para ativar o acesso."
+        : "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá um link para definir sua senha.";
 
     showFeedback(feedback, "success", successMessage);
     form.reset();
@@ -432,7 +767,7 @@ async function handleResetPasswordRequest() {
   clearFeedback(feedback);
 
   if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para receber uma nova senha.");
+    showFeedback(feedback, "error", "Informe um email válido para receber um novo link.");
     return;
   }
 
@@ -445,7 +780,7 @@ async function handleResetPasswordRequest() {
     return;
   }
 
-  setLoading(button, true, "Enviando nova senha...");
+  setLoading(button, true, "Enviando link...");
 
   try {
     const data = await jsonpRequest("reset_password_jsonp", {
@@ -457,13 +792,13 @@ async function handleResetPasswordRequest() {
     showFeedback(
       feedback,
       "success",
-      data?.message || "Se o email estiver ativo no sistema, enviaremos uma nova senha por email em instantes."
+      data?.message || "Se o email estiver ativo no sistema, enviaremos um link seguro para você definir uma nova senha."
     );
   } catch (error) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço ao solicitar nova senha."
+      "Falha de comunicação com o serviço ao solicitar o link de nova senha."
     );
   } finally {
     setLoading(button, false, "Esqueci a senha / Quero mudar");
@@ -530,6 +865,8 @@ function updateTermsLink() {
   const termsUrl = cleanValue(state.config.termsUrl, FALLBACK_TERMS_URL);
   const hasTermsUrl = hasUsableUrl(termsUrl);
 
+  if (!link || !status) return;
+
   link.href = hasTermsUrl ? termsUrl : "#";
   link.setAttribute("aria-disabled", String(!hasTermsUrl));
   link.classList.toggle("is-disabled", !hasTermsUrl);
@@ -563,7 +900,7 @@ function updateSignupEmbed() {
     shell.hidden = false;
     fallbackForm.hidden = true;
     note.textContent =
-      "Preencha o formulário abaixo. Depois da confirmação por email, você receberá uma senha aleatória para entrar.";
+      "Preencha o formulário abaixo. Depois da confirmação por email, você receberá um link para definir sua senha.";
     return;
   }
 
