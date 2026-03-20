@@ -305,7 +305,7 @@ function renderPasswordSetupBridge(email, token) {
       return;
     }
 
-    showFeedback(feedback, "success", "Enviando sua nova senha com segurança...");
+    showFeedback(feedback, "success", "Salvando sua nova senha com segurança...");
   });
 
   card.appendChild(eyebrow);
