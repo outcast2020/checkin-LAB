@@ -637,6 +637,12 @@ p {
   font-size: 0.92rem;
 }
 
+.form-note--support {
+  margin-top: 0.45rem;
+  font-size: 0.84rem;
+  color: rgba(74, 53, 41, 0.82);
+}
+
 .feedback {
   min-height: 1.5rem;
   margin-top: 0.85rem;
