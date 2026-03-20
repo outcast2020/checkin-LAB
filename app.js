@@ -612,6 +612,12 @@ async function handleLoginSubmit(event) {
 
   try {
     const data = await jsonpRequest("login_jsonp", payload);
+    console.log("[cordel-checkin] login_jsonp:data", data);
+    console.log("[cordel-checkin] login_jsonp:redirectUrl", data?.redirectUrl);
+    console.log(
+      "[cordel-checkin] login_jsonp:hasLabAccessRedirect",
+      hasLabAccessRedirect(data?.redirectUrl)
+    );
 
     if (!data?.ok) {
       const message =
@@ -642,6 +648,7 @@ async function handleLoginSubmit(event) {
     );
     safeRedirect(data.redirectUrl);
   } catch (error) {
+    console.error("[cordel-checkin] login_jsonp:error", error);
     showFeedback(
       feedback,
       "error",
