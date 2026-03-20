@@ -6,10 +6,10 @@ const DEFAULT_CHECKIN_URL =
   typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
 const DEFAULT_FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform?embedded=true";
-const DEFAULT_PROJECT_NAME = "Laboratório Cordel 2.0";
+const DEFAULT_PROJECT_NAME = "LaboratÃ³rio Cordel 2.0";
 const DEFAULT_TERMS_VERSION = "2026-03-v1";
 const DEFAULT_PRIVACY_NOTICE =
-  "Coletamos dados mínimos de identificação, acesso e participação para o funcionamento ético e organizado do Laboratório Cordel 2.0.";
+  "Coletamos dados mÃ­nimos de identificaÃ§Ã£o, acesso e participaÃ§Ã£o para o funcionamento Ã©tico e organizado do LaboratÃ³rio Cordel 2.0.";
 const REDIRECT_DELAY_MS = 1800;
 
 const state = {
@@ -61,10 +61,10 @@ function handleBridgeRoute() {
 
 function startConfirmationBridge(email, token) {
   renderBridgeState({
-    eyebrow: "Confirmação em andamento",
+    eyebrow: "ConfirmaÃ§Ã£o em andamento",
     title: "Validando seu email com cuidado",
     message:
-      "Estamos confirmando seu acesso em ambiente seguro para preparar a próxima etapa do Laboratório Cordel 2.0.",
+      "Estamos confirmando seu acesso em ambiente seguro para preparar a prÃ³xima etapa do LaboratÃ³rio Cordel 2.0.",
     quote: getBridgeQuote(0),
     loading: true,
     actions: []
@@ -176,10 +176,10 @@ function runConfirmationJsonp(email, token) {
     delete window[callbackName];
     script.remove();
     renderBridgeState({
-      eyebrow: "Confirmação indisponível",
-      title: "Não foi possível validar o email",
+      eyebrow: "ConfirmaÃ§Ã£o indisponÃ­vel",
+      title: "NÃ£o foi possÃ­vel validar o email",
       message:
-        "O serviço de confirmação não respondeu corretamente. Tente novamente pelo link do email ou solicite um novo envio no check-in.",
+        "O serviÃ§o de confirmaÃ§Ã£o nÃ£o respondeu corretamente. Tente novamente pelo link do email ou solicite um novo envio no check-in.",
       quote: getBridgeQuote(1),
       actions: buildBridgeActions({
         primaryLabel: "Voltar ao check-in",
@@ -199,8 +199,8 @@ function renderConfirmationResult(payload) {
   const safePayload = payload && typeof payload === "object" ? payload : {};
 
   renderBridgeState({
-    eyebrow: safePayload.ok ? "Acesso preparado" : "Atenção",
-    title: safePayload.title || "Confirmação de email",
+    eyebrow: safePayload.ok ? "Acesso preparado" : "AtenÃ§Ã£o",
+    title: safePayload.title || "ConfirmaÃ§Ã£o de email",
     message: safePayload.message || "Seu link foi processado.",
     quote: getBridgeQuote(safePayload.ok ? 2 : 3),
     actions: buildBridgeActions({
@@ -229,12 +229,12 @@ function renderPasswordSetupBridge(email, token) {
   eyebrow.textContent = "Escolha sua senha";
 
   const heading = document.createElement("h1");
-  heading.textContent = "Defina seu acesso com segurança";
+  heading.textContent = "Defina seu acesso com seguranÃ§a";
 
   const message = document.createElement("p");
   message.className = "redirect-shell__message";
   message.textContent =
-    "Crie uma senha com pelo menos 10 caracteres, usando letras e números. Depois disso, seu acesso ficará pronto para entrar.";
+    "Crie uma senha com pelo menos 10 caracteres, usando letras e nÃºmeros. Depois disso, seu acesso ficarÃ¡ pronto para entrar.";
 
   const quote = document.createElement("blockquote");
   quote.className = "redirect-shell__quote";
@@ -260,7 +260,7 @@ function renderPasswordSetupBridge(email, token) {
   const helper = document.createElement("p");
   helper.className = "redirect-shell__note";
   helper.textContent =
-    "Dica: combine uma frase curta que faça sentido para você com números. Exemplo de estrutura: cordel2026lab.";
+    "Dica: combine uma frase curta que faÃ§a sentido para vocÃª com nÃºmeros. Exemplo de estrutura: cordel2026lab.";
 
   const feedback = document.createElement("div");
   feedback.className = "feedback";
@@ -305,7 +305,7 @@ function renderPasswordSetupBridge(email, token) {
       return;
     }
 
-    showFeedback(feedback, "success", "Salvando sua nova senha com segurança...");
+    showFeedback(feedback, "success", "Salvando sua nova senha com seguranÃ§a...");
   });
 
   card.appendChild(eyebrow);
@@ -359,7 +359,7 @@ function validatePasswordChoice(password, confirmation) {
   }
 
   if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-    return "Use ao menos uma letra e um número na nova senha.";
+    return "Use ao menos uma letra e um nÃºmero na nova senha.";
   }
 
   return "";
@@ -439,11 +439,11 @@ function getBridgeQuote(index) {
 
 function getBridgeQuotes() {
   return [
-    "Inspirado em Paulo Freire: entrar em um processo de aprendizagem também é um gesto de autonomia e cuidado.",
-    "Inspirado em Conceição Evaristo: cada presença que chega soma memória, voz e futuro ao que estamos construindo.",
-    "Inspirado em Paulo Freire: informar com clareza também é parte do respeito que sustenta qualquer experiência transformadora.",
-    "Inspirado em Conceição Evaristo: seguimos com delicadeza, porque toda travessia merece acolhimento e escuta.",
-    "Inspirado em Paulo Freire e Conceição Evaristo: sua escolha de senha também é um gesto de autoria sobre o próprio caminho."
+    "Inspirado em Paulo Freire: entrar em um processo de aprendizagem tambÃ©m Ã© um gesto de autonomia e cuidado.",
+    "Inspirado em ConceiÃ§Ã£o Evaristo: cada presenÃ§a que chega soma memÃ³ria, voz e futuro ao que estamos construindo.",
+    "Inspirado em Paulo Freire: informar com clareza tambÃ©m Ã© parte do respeito que sustenta qualquer experiÃªncia transformadora.",
+    "Inspirado em ConceiÃ§Ã£o Evaristo: seguimos com delicadeza, porque toda travessia merece acolhimento e escuta.",
+    "Inspirado em Paulo Freire e ConceiÃ§Ã£o Evaristo: sua escolha de senha tambÃ©m Ã© um gesto de autoria sobre o prÃ³prio caminho."
   ];
 }
 
@@ -524,7 +524,7 @@ async function loadRemoteConfig() {
   if (!hasWebAppUrl()) {
     setText(
       "#termsStatus",
-      "Configure a URL do Web App e do PDF em app.js para ativar a integração completa."
+      "Configure a URL do Web App e do PDF em app.js para ativar a integraÃ§Ã£o completa."
     );
     return;
   }
@@ -559,7 +559,7 @@ async function loadRemoteConfig() {
   } catch (error) {
     setText(
       "#termsStatus",
-      "Não foi possível carregar a configuração remota. O site segue com os valores locais."
+      "NÃ£o foi possÃ­vel carregar a configuraÃ§Ã£o remota. O site segue com os valores locais."
     );
   }
 }
@@ -581,12 +581,12 @@ async function handleLoginSubmit(event) {
   clearFeedback(feedback);
 
   if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para continuar.");
+    showFeedback(feedback, "error", "Informe um email valido para continuar.");
     return;
   }
 
   if (!consentAccepted) {
-    showFeedback(feedback, "error", "É necessário aceitar o termo para entrar.");
+    showFeedback(feedback, "error", "E necessario aceitar o termo para entrar.");
     return;
   }
 
@@ -594,7 +594,7 @@ async function handleLoginSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
+      "A URL do Google Apps Script ainda nao foi configurada em app.js."
     );
     return;
   }
@@ -616,27 +616,36 @@ async function handleLoginSubmit(event) {
     if (!data?.ok) {
       const message =
         data?.code === "EMAIL_NAO_AUTORIZADO"
-          ? "Não encontramos esse email na lista de acesso. Você pode seguir pela aba de cadastro."
+          ? "Nao encontramos esse email na lista de acesso. Voce pode seguir pela aba de cadastro."
           : data?.code === "EMAIL_NAO_CONFIRMADO"
-            ? "Seu cadastro está pendente de confirmação. Verifique o email recebido e ative seu acesso antes de entrar."
+            ? "Seu cadastro esta pendente de confirmacao. Verifique o email recebido e ative seu acesso antes de entrar."
             : data?.code === "SENHA_NAO_CONFIGURADA"
-              ? "Sua senha ainda não foi definida. Use a opção 'Esqueci a senha / Quero mudar' para receber um link e escolher sua senha."
-              : data?.message || "Não foi possível validar seu acesso agora.";
+              ? "Sua senha ainda nao foi definida. Use a opcao 'Esqueci a senha / Quero mudar' para receber um link e escolher sua senha."
+              : data?.message || "Nao foi possivel validar seu acesso agora.";
       showFeedback(feedback, "error", message);
+      return;
+    }
+
+    if (!hasLabAccessRedirect(data?.redirectUrl)) {
+      showFeedback(
+        feedback,
+        "error",
+        "Seu acesso foi validado, mas o link seguro para entrar no laboratorio nao foi gerado corretamente. Tente entrar novamente em instantes."
+      );
       return;
     }
 
     showFeedback(
       feedback,
       "success",
-      "Acesso confirmado. Você será redirecionado para o ambiente do laboratório."
+      "Acesso confirmado. Voce sera redirecionado para o ambiente do laboratorio."
     );
     safeRedirect(data.redirectUrl);
   } catch (error) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço de acesso. Solicite um novo link de senha e tente novamente em instantes."
+      "Falha de comunicacao com o servico de acesso. Solicite um novo link de senha e tente novamente em instantes."
     );
   } finally {
     setLoading(button, false, "Entrar");
@@ -669,7 +678,7 @@ async function handleSignupSubmit(event) {
   }
 
   if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido.");
+    showFeedback(feedback, "error", "Informe um email vÃ¡lido.");
     return;
   }
 
@@ -679,7 +688,7 @@ async function handleSignupSubmit(event) {
   }
 
   if (!instituicao) {
-    showFeedback(feedback, "error", "Informe a instituição ou escreva 'Não se aplica'.");
+    showFeedback(feedback, "error", "Informe a instituiÃ§Ã£o ou escreva 'NÃ£o se aplica'.");
     return;
   }
 
@@ -687,7 +696,7 @@ async function handleSignupSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "Informe se você fez ou está nas oficinas do Cordel 2.0."
+      "Informe se vocÃª fez ou estÃ¡ nas oficinas do Cordel 2.0."
     );
     return;
   }
@@ -698,7 +707,7 @@ async function handleSignupSubmit(event) {
   }
 
   if (!consentAccepted) {
-    showFeedback(feedback, "error", "É necessário aceitar o consentimento informado.");
+    showFeedback(feedback, "error", "Ã‰ necessÃ¡rio aceitar o consentimento informado.");
     return;
   }
 
@@ -706,7 +715,7 @@ async function handleSignupSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
+      "A URL do Google Apps Script ainda nÃ£o foi configurada em app.js."
     );
     return;
   }
@@ -733,16 +742,16 @@ async function handleSignupSubmit(event) {
     if (!data?.ok) {
       const message =
         data?.code === "EMAIL_JA_CADASTRADO"
-          ? "Este email já está cadastrado. Use a aba Entrar para continuar."
-          : data?.message || "Não foi possível concluir o cadastro agora.";
+          ? "Este email jÃ¡ estÃ¡ cadastrado. Use a aba Entrar para continuar."
+          : data?.message || "NÃ£o foi possÃ­vel concluir o cadastro agora.";
       showFeedback(feedback, "error", message);
       return;
     }
 
     const successMessage =
       data?.code === "SIGNUP_PENDING_EMAIL_RESENT"
-        ? "Seu cadastro já existia e reenviamos o link de confirmação. Verifique seu email para ativar o acesso."
-        : "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá um link para definir sua senha.";
+        ? "Seu cadastro jÃ¡ existia e reenviamos o link de confirmaÃ§Ã£o. Verifique seu email para ativar o acesso."
+        : "Cadastro recebido com sucesso. Enviamos um link de confirmaÃ§Ã£o para seu email. Depois de confirmar, vocÃª receberÃ¡ um link para definir sua senha.";
 
     showFeedback(feedback, "success", successMessage);
     form.reset();
@@ -751,7 +760,7 @@ async function handleSignupSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço. Se o site estiver em outro domínio, confirme a liberação de CORS do Web App."
+      "Falha de comunicaÃ§Ã£o com o serviÃ§o. Se o site estiver em outro domÃ­nio, confirme a liberaÃ§Ã£o de CORS do Web App."
     );
   } finally {
     setLoading(button, false, "Cadastrar e continuar");
@@ -767,7 +776,7 @@ async function handleResetPasswordRequest() {
   clearFeedback(feedback);
 
   if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para receber um novo link.");
+    showFeedback(feedback, "error", "Informe um email vÃ¡lido para receber um novo link.");
     return;
   }
 
@@ -775,7 +784,7 @@ async function handleResetPasswordRequest() {
     showFeedback(
       feedback,
       "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
+      "A URL do Google Apps Script ainda nÃ£o foi configurada em app.js."
     );
     return;
   }
@@ -792,13 +801,13 @@ async function handleResetPasswordRequest() {
     showFeedback(
       feedback,
       "success",
-      data?.message || "Se o email estiver ativo no sistema, enviaremos um link seguro para você definir uma nova senha."
+      data?.message || "Se o email estiver ativo no sistema, enviaremos um link seguro para vocÃª definir uma nova senha."
     );
   } catch (error) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço ao solicitar o link de nova senha."
+      "Falha de comunicaÃ§Ã£o com o serviÃ§o ao solicitar o link de nova senha."
     );
   } finally {
     setLoading(button, false, "Esqueci a senha / Quero mudar");
@@ -853,7 +862,9 @@ function jsonpRequest(action, params) {
 }
 
 function safeRedirect(url) {
-  const target = cleanValue(url, state.config.labUrl || DEFAULT_LAB_URL);
+  const target = cleanValue(url, "");
+  if (!target) return;
+
   window.setTimeout(() => {
     if (window.parent && window.parent !== window) {
       try {
@@ -882,13 +893,24 @@ function safeRedirect(url) {
       window.open(target, "_top");
       return;
     } catch (error) {
-      // Fallback final para navegação na própria janela.
+      // Fallback final para navegacao na propria janela.
     }
 
     window.location.href = target;
   }, REDIRECT_DELAY_MS);
 }
 
+function hasLabAccessRedirect(url) {
+  const target = cleanValue(url, "");
+  if (!target) return false;
+
+  try {
+    const parsed = new URL(target, window.location.origin);
+    return parsed.searchParams.has("access_token");
+  } catch (error) {
+    return false;
+  }
+}
 function updateTermsLink() {
   const link = document.querySelector("#termsLink");
   const status = document.querySelector("#termsStatus");
@@ -902,7 +924,7 @@ function updateTermsLink() {
   link.classList.toggle("is-disabled", !hasTermsUrl);
 
   if (hasTermsUrl) {
-    status.textContent = `Versão atual do termo: ${state.config.termsVersion}.`;
+    status.textContent = `VersÃ£o atual do termo: ${state.config.termsVersion}.`;
   } else {
     status.textContent =
       "Configure a URL do PDF no Apps Script ou no arquivo app.js para habilitar a leitura completa.";
@@ -930,7 +952,7 @@ function updateSignupEmbed() {
     shell.hidden = false;
     fallbackForm.hidden = true;
     note.textContent =
-      "Preencha o formulário abaixo. Depois da confirmação por email, você receberá um link para definir sua senha.";
+      "Preencha o formulÃ¡rio abaixo. Depois da confirmaÃ§Ã£o por email, vocÃª receberÃ¡ um link para definir sua senha.";
     return;
   }
 
@@ -1054,3 +1076,4 @@ function cleanValue(value, fallback) {
   const clean = String(value || "").trim();
   return clean || fallback;
 }
+
