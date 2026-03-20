@@ -1,7 +1,7 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwk7h-i5kF7uhaTFuoUvZLZPPN7kxN7c7_HWh3jQ9Z5HqVfDQYp9jdu9LKZKZ9Cy-eJ/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1sTR53h1LQVqugdbSl1Rj6DE1ZhcyNwjegjixBiRVQNVyd2Ru8CGotO95dnj4aiNk/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
-const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/labx9q2mz7vkp4r8tbn6wcy3hd5jfa1u0sln7e2gk9rvm4p8qz2hx";
+const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/laboratorio";
 const DEFAULT_CHECKIN_URL =
   typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
@@ -855,6 +855,22 @@ function jsonpRequest(action, params) {
 function safeRedirect(url) {
   const target = cleanValue(url, state.config.labUrl || DEFAULT_LAB_URL);
   window.setTimeout(() => {
+    try {
+      if (window.top && window.top !== window) {
+        window.top.location.href = target;
+        return;
+      }
+    } catch (error) {
+      // Se o navegador bloquear acesso ao topo, segue para os fallbacks abaixo.
+    }
+
+    try {
+      window.open(target, "_top");
+      return;
+    } catch (error) {
+      // Fallback final para navegação na própria janela.
+    }
+
     window.location.href = target;
   }, REDIRECT_DELAY_MS);
 }
