@@ -855,6 +855,20 @@ function jsonpRequest(action, params) {
 function safeRedirect(url) {
   const target = cleanValue(url, state.config.labUrl || DEFAULT_LAB_URL);
   window.setTimeout(() => {
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage(
+          {
+            type: "cordel-checkin:navigate",
+            href: target
+          },
+          "*"
+        );
+      } catch (error) {
+        // Se postMessage falhar, segue para os fallbacks abaixo.
+      }
+    }
+
     try {
       if (window.top && window.top !== window) {
         window.top.location.href = target;
