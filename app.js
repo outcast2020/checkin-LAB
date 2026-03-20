@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5MD5JZklOymXSAu_dX3cbaE5ibFUp5rCYsTPSZ0MagKjSe2c0hPn5gXDHXxCAKKQN/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwk7h-i5kF7uhaTFuoUvZLZPPN7kxN7c7_HWh3jQ9Z5HqVfDQYp9jdu9LKZKZ9Cy-eJ/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/labx9q2mz7vkp4r8tbn6wcy3hd5jfa1u0sln7e2gk9rvm4p8qz2hx";
