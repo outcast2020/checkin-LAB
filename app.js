@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxKxavkmVovFlg9QgS15cSg0AQzlCiXoDSa1BpwICyfSpDnSkDQKB2BS11czv5at0gQ/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxosVbi8xIXhY1L_DzDQPyP1G6ttR3S_T3s90hXx4KWOwjBI9XDdpKNGxu7GxGgrfWb/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/laboratorio";
@@ -733,16 +733,14 @@ async function handleSignupSubmit(event) {
     if (!data?.ok) {
       const message =
         data?.code === "EMAIL_JA_CADASTRADO"
-          ? "Este email já está cadastrado. Use a aba Entrar para continuar."
+          ? "Já existe um registro com este email. Use a aba Entrar para continuar."
           : data?.message || "Não foi possível concluir o cadastro agora.";
       showFeedback(feedback, "error", message);
       return;
     }
 
     const successMessage =
-      data?.code === "SIGNUP_PENDING_EMAIL_RESENT"
-        ? "Seu cadastro já existia e reenviamos o link de confirmação. Verifique seu email para ativar o acesso."
-        : "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá um link para definir sua senha.";
+      "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá um link para definir sua senha.";
 
     showFeedback(feedback, "success", successMessage);
     form.reset();
@@ -751,7 +749,7 @@ async function handleSignupSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço. Se o site estiver em outro domínio, confirme a liberação de CORS do Web App."
+      "Falha de comunicação com o serviço. Tente novamente em instantes."
     );
   } finally {
     setLoading(button, false, "Cadastrar e continuar");
@@ -1066,3 +1064,7 @@ function cleanValue(value, fallback) {
   const clean = String(value || "").trim();
   return clean || fallback;
 }
+
+
+
+
