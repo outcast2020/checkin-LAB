@@ -317,7 +317,7 @@ function renderPasswordSetupBridge(email, token) {
   document.body.appendChild(shell);
 }
 
-function submitLoginForm(payload) {
+function submitWebAppForm(payload) {
   const form = document.createElement("form");
   form.method = "POST";
   form.action = WEB_APP_URL;
@@ -640,7 +640,7 @@ async function handleLoginSubmit(event) {
     "Abrindo seu acesso seguro ao laboratório..."
   );
 
-  submitLoginForm(payload);
+  submitWebAppForm(payload);
 }
 
 async function handleSignupSubmit(event) {
@@ -758,7 +758,7 @@ async function handleSignupSubmit(event) {
   }
 }
 
-async function handleResetPasswordRequest() {
+function handleResetPasswordRequest() {
   const form = document.querySelector("#loginForm");
   const feedback = document.querySelector("#loginFeedback");
   const button = document.querySelector("#resetPasswordButton");
@@ -780,29 +780,28 @@ async function handleResetPasswordRequest() {
     return;
   }
 
+  const payload = {
+    action: "reset_password",
+    email,
+    page: "checkin",
+    userAgent: navigator.userAgent
+  };
+
+  console.log("[cordel-checkin] reset_password:submit", {
+    email,
+    page: payload.page,
+    target: WEB_APP_URL,
+    topLevel: window.top !== window
+  });
+
   setLoading(button, true, "Enviando link...");
+  showFeedback(
+    feedback,
+    "success",
+    "Abrindo sua solicitação segura para envio do link..."
+  );
 
-  try {
-    const data = await jsonpRequest("reset_password_jsonp", {
-      email,
-      page: "checkin",
-      userAgent: navigator.userAgent
-    });
-
-    showFeedback(
-      feedback,
-      "success",
-      data?.message || "Se o email estiver ativo no sistema, enviaremos um link seguro para você definir uma nova senha."
-    );
-  } catch (error) {
-    showFeedback(
-      feedback,
-      "error",
-      "Falha de comunicação com o serviço ao solicitar o link de nova senha."
-    );
-  } finally {
-    setLoading(button, false, "Esqueci a senha / Quero mudar");
-  }
+  submitWebAppForm(payload);
 }
 
 async function postJson(payload) {
@@ -1067,7 +1066,3 @@ function cleanValue(value, fallback) {
   const clean = String(value || "").trim();
   return clean || fallback;
 }
-
-
-
-
