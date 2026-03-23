@@ -317,6 +317,23 @@ function renderPasswordSetupBridge(email, token) {
   document.body.appendChild(shell);
 }
 
+function submitLoginForm(payload) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = WEB_APP_URL;
+  form.acceptCharset = "UTF-8";
+  form.style.display = "none";
+  form.target = window.top && window.top !== window ? "_top" : "_self";
+
+  Object.entries(payload || {}).forEach(([name, value]) => {
+    if (value === undefined || value === null) return;
+    addHiddenInput(form, name, String(value));
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
 function addHiddenInput(form, name, value) {
   const input = document.createElement("input");
   input.type = "hidden";
@@ -581,12 +598,12 @@ async function handleLoginSubmit(event) {
   clearFeedback(feedback);
 
   if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email valido para continuar.");
+    showFeedback(feedback, "error", "Informe um email válido para continuar.");
     return;
   }
 
   if (!consentAccepted) {
-    showFeedback(feedback, "error", "E necessario aceitar o termo para entrar.");
+    showFeedback(feedback, "error", "É necessário aceitar o termo para entrar.");
     return;
   }
 
@@ -594,12 +611,13 @@ async function handleLoginSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "A URL do Google Apps Script ainda nao foi configurada em app.js."
+      "A URL do Google Apps Script ainda não foi configurada em app.js."
     );
     return;
   }
 
   const payload = {
+    action: "login",
     email,
     senha,
     consentAccepted: true,
@@ -608,55 +626,21 @@ async function handleLoginSubmit(event) {
     userAgent: navigator.userAgent
   };
 
+  console.log("[cordel-checkin] login_form:submit", {
+    email,
+    page: payload.page,
+    target: WEB_APP_URL,
+    topLevel: window.top !== window
+  });
+
   setLoading(button, true, "Entrando...");
+  showFeedback(
+    feedback,
+    "success",
+    "Abrindo seu acesso seguro ao laboratório..."
+  );
 
-  try {
-    const data = await jsonpRequest("login_jsonp", payload);
-    console.log("[cordel-checkin] login_jsonp:data", data);
-    console.log("[cordel-checkin] login_jsonp:redirectUrl", data?.redirectUrl);
-    console.log(
-      "[cordel-checkin] login_jsonp:hasLabAccessRedirect",
-      hasLabAccessRedirect(data?.redirectUrl)
-    );
-
-    if (!data?.ok) {
-      const message =
-        data?.code === "EMAIL_NAO_AUTORIZADO"
-          ? "Nao encontramos esse email na lista de acesso. Voce pode seguir pela aba de cadastro."
-          : data?.code === "EMAIL_NAO_CONFIRMADO"
-            ? "Seu cadastro esta pendente de confirmacao. Verifique o email recebido e ative seu acesso antes de entrar."
-            : data?.code === "SENHA_NAO_CONFIGURADA"
-              ? "Sua senha ainda nao foi definida. Use a opcao 'Esqueci a senha / Quero mudar' para receber um link e escolher sua senha."
-              : data?.message || "Nao foi possivel validar seu acesso agora.";
-      showFeedback(feedback, "error", message);
-      return;
-    }
-
-    if (!hasLabAccessRedirect(data?.redirectUrl)) {
-      showFeedback(
-        feedback,
-        "error",
-        "Seu acesso foi validado, mas o link seguro para entrar no laboratorio nao foi gerado corretamente. Tente entrar novamente em instantes."
-      );
-      return;
-    }
-
-    showFeedback(
-      feedback,
-      "success",
-      "Acesso confirmado. Voce sera redirecionado para o ambiente do laboratorio."
-    );
-    safeRedirect(data.redirectUrl);
-  } catch (error) {
-    console.error("[cordel-checkin] login_jsonp:error", error);
-    showFeedback(
-      feedback,
-      "error",
-      "Falha de comunicacao com o servico de acesso. Solicite um novo link de senha e tente novamente em instantes."
-    );
-  } finally {
-    setLoading(button, false, "Entrar");
-  }
+  submitLoginForm(payload);
 }
 
 async function handleSignupSubmit(event) {
@@ -1083,3 +1067,6 @@ function cleanValue(value, fallback) {
   const clean = String(value || "").trim();
   return clean || fallback;
 }
+
+
+
