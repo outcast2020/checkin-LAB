@@ -901,6 +901,7 @@ function hasLabAccessRedirect(url) {
 }
 function updateTermsLink() {
   const link = document.querySelector("#termsLink");
+  const attentionLink = document.querySelector("#attentionTermsLink");
   const status = document.querySelector("#termsStatus");
   const termsUrl = cleanValue(state.config.termsUrl, FALLBACK_TERMS_URL);
   const hasTermsUrl = hasUsableUrl(termsUrl);
@@ -910,6 +911,12 @@ function updateTermsLink() {
   link.href = hasTermsUrl ? termsUrl : "#";
   link.setAttribute("aria-disabled", String(!hasTermsUrl));
   link.classList.toggle("is-disabled", !hasTermsUrl);
+
+  if (attentionLink) {
+    attentionLink.href = hasTermsUrl ? termsUrl : "#";
+    attentionLink.setAttribute("aria-disabled", String(!hasTermsUrl));
+    attentionLink.classList.toggle("is-disabled", !hasTermsUrl);
+  }
 
   if (hasTermsUrl) {
     status.textContent = `Versão atual do termo: ${state.config.termsVersion}.`;
