@@ -407,6 +407,8 @@ p {
 }
 
 .attention-card__actions {
+  display: grid;
+  gap: 0.75rem;
   margin-top: 1rem;
 }
 
@@ -438,6 +440,17 @@ p {
 .attention-card__button[aria-disabled="true"] {
   opacity: 0.55;
   pointer-events: none;
+}
+
+.attention-card__button--secondary {
+  background: linear-gradient(135deg, rgba(18, 57, 70, 0.94), rgba(39, 91, 109, 0.96));
+  color: #fff8f0;
+  box-shadow: 0 12px 24px rgba(9, 39, 51, 0.18);
+}
+
+.attention-card__button--secondary:hover,
+.attention-card__button--secondary:focus-visible {
+  box-shadow: 0 16px 26px rgba(9, 39, 51, 0.22);
 }
 
 .content {
