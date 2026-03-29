@@ -406,6 +406,40 @@ p {
   color: var(--night-strong);
 }
 
+.attention-card__actions {
+  margin-top: 1rem;
+}
+
+.attention-card__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3.35rem;
+  padding: 0.9rem 1.15rem;
+  border: 1px solid rgba(9, 39, 51, 0.1);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  box-shadow: 0 12px 24px rgba(198, 95, 0, 0.16);
+  color: var(--night-strong);
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.attention-card__button:hover,
+.attention-card__button:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 26px rgba(198, 95, 0, 0.2);
+}
+
+.attention-card__button.is-disabled,
+.attention-card__button[aria-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .content {
   display: grid;
   gap: 1rem;
