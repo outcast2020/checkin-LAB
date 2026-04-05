@@ -1,5 +1,5 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxosVbi8xIXhY1L_DzDQPyP1G6ttR3S_T3s90hXx4KWOwjBI9XDdpKNGxu7GxGgrfWb/exec";
-const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
+const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/laboratorio";
 const DEFAULT_CHECKIN_URL =
@@ -7,7 +7,7 @@ const DEFAULT_CHECKIN_URL =
 const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
 const DEFAULT_FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform?embedded=true";
 const DEFAULT_PROJECT_NAME = "LaboratÃƒÂ³rio Cordel 2.0";
-const DEFAULT_TERMS_VERSION = "2026-03-v1";
+const DEFAULT_TERMS_VERSION = "2026-04-v1";
 const DEFAULT_PRIVACY_NOTICE =
   "Coletamos dados mÃƒÂ­nimos de identificaÃƒÂ§ÃƒÂ£o, acesso e participaÃƒÂ§ÃƒÂ£o para o funcionamento ÃƒÂ©tico e organizado do LaboratÃƒÂ³rio Cordel 2.0.";
 const REDIRECT_DELAY_MS = 1800;
