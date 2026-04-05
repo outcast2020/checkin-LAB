@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxosVbi8xIXhY1L_DzDQPyP1G6ttR3S_T3s90hXx4KWOwjBI9XDdpKNGxu7GxGgrfWb/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby_CyJhMq0iEnE5Xe43_ItNk5IC06NQYs9ObzTQ7mBYnZsMTDoa3qSp-fYrFulvbGwM/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/laboratorio";
@@ -537,6 +537,47 @@ function hydrateUi() {
   updateSignupEmbed();
 }
 
+function parseTermsVersion(value) {
+  const match = String(value || "").trim().match(/^(\d{4})-(\d{2})-v(\d+)$/i);
+  if (!match) return null;
+
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    revision: Number(match[3])
+  };
+}
+
+function compareTermsVersion(a, b) {
+  const versionA = parseTermsVersion(a);
+  const versionB = parseTermsVersion(b);
+
+  if (!versionA || !versionB) return 0;
+  if (versionA.year !== versionB.year) return versionA.year - versionB.year;
+  if (versionA.month !== versionB.month) return versionA.month - versionB.month;
+  return versionA.revision - versionB.revision;
+}
+
+function resolveTermsConfig(remoteVersion, remoteUrl) {
+  const safeRemoteVersion = cleanValue(remoteVersion, DEFAULT_TERMS_VERSION);
+  const safeRemoteUrl = cleanValue(remoteUrl, FALLBACK_TERMS_URL);
+  const isOlderRemoteVersion = compareTermsVersion(safeRemoteVersion, DEFAULT_TERMS_VERSION) < 0;
+  const isKnownLegacyUrl =
+    safeRemoteUrl === "https://www.cordel2pontozero.com/s/Termos-Uso-Laboratorio-WEB-Cordel-20.pdf";
+
+  if (isOlderRemoteVersion || isKnownLegacyUrl) {
+    return {
+      termsVersion: DEFAULT_TERMS_VERSION,
+      termsUrl: FALLBACK_TERMS_URL
+    };
+  }
+
+  return {
+    termsVersion: safeRemoteVersion,
+    termsUrl: safeRemoteUrl
+  };
+}
+
 async function loadRemoteConfig() {
   if (!hasWebAppUrl()) {
     setText(
@@ -560,10 +601,12 @@ async function loadRemoteConfig() {
     const data = await response.json();
     if (!data?.ok) return;
 
+    const resolvedTerms = resolveTermsConfig(data.termsVersion, data.termsUrl);
+
     state.config = {
       projectName: cleanValue(data.projectName, DEFAULT_PROJECT_NAME),
-      termsVersion: cleanValue(data.termsVersion, DEFAULT_TERMS_VERSION),
-      termsUrl: cleanValue(data.termsUrl, FALLBACK_TERMS_URL),
+      termsVersion: resolvedTerms.termsVersion,
+      termsUrl: resolvedTerms.termsUrl,
       privacyNoticeShort: cleanValue(data.privacyNoticeShort, DEFAULT_PRIVACY_NOTICE),
       projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL),
       labUrl: cleanValue(data.labUrl, DEFAULT_LAB_URL),
