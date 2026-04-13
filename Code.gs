@@ -17,7 +17,7 @@
     PROJECT_URL: 'https://www.cordel2pontozero.com/',
     LAB_URL: 'https://www.cordel2pontozero.com/laboratorio',
     CHECKIN_URL: 'https://www.cordel2pontozero.com/checkin',
-    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycby_CyJhMq0iEnE5Xe43_ItNk5IC06NQYs9ObzTQ7mBYnZsMTDoa3qSp-fYrFulvbGwM/exec',
+    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbykmutZ7xPYOwazCvr74YK_W3NBpWRl1Dcm5pH5SY5H5xKR1BnK04-IZcU-fz5hkblb/exec',
     PROJECT_TIME_ZONE: 'America/Sao_Paulo',
     LAB_ACCESS_TOKEN_TTL_MINUTES: '10',
     LAB_BROWSER_SESSION_TTL_MINUTES: '240',
@@ -1543,7 +1543,7 @@ function buildConfirmationUrl_(settings, email, token) {
   const bridgeUrl = cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL || '');
   const baseUrl = isUsableUrl_(bridgeUrl)
     ? bridgeUrl
-    : cleanText_(settings.WEB_APP_URL || LAB_CFG.DEFAULTS.WEB_APP_URL || ScriptApp.getService().getUrl() || '');
+    : cleanText_(LAB_CFG.DEFAULTS.WEB_APP_URL || settings.WEB_APP_URL || ScriptApp.getService().getUrl() || '');
   if (!isUsableUrl_(baseUrl)) {
     throw new Error('Não foi possível determinar a URL do Web App para confirmação.');
   }
@@ -1560,7 +1560,7 @@ function buildPasswordSetupUrl_(settings, email, token) {
   const bridgeUrl = cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL || '');
   const baseUrl = isUsableUrl_(bridgeUrl)
     ? bridgeUrl
-    : cleanText_(settings.WEB_APP_URL || LAB_CFG.DEFAULTS.WEB_APP_URL || ScriptApp.getService().getUrl() || '');
+    : cleanText_(LAB_CFG.DEFAULTS.WEB_APP_URL || settings.WEB_APP_URL || ScriptApp.getService().getUrl() || '');
   if (!isUsableUrl_(baseUrl)) {
     throw new Error('Não foi possível determinar a URL do check-in para definir senha.');
   }
