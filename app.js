@@ -677,7 +677,6 @@ async function handleLoginSubmit(event) {
   }
 
   const payload = {
-    action: "login",
     email,
     senha,
     consentAccepted: true,
@@ -700,7 +699,36 @@ async function handleLoginSubmit(event) {
     "Abrindo seu acesso seguro ao laboratório..."
   );
 
-  submitWebAppForm(payload);
+  try {
+    const data = await jsonpRequest("login_jsonp", payload);
+
+    if (!data?.ok) {
+      showFeedback(
+        feedback,
+        "error",
+        data?.message || "Nao foi possivel validar seu acesso agora."
+      );
+      return;
+    }
+
+    showFeedback(
+      feedback,
+      "success",
+      "Acesso validado. Redirecionando para o laboratorio..."
+    );
+
+    if (data?.redirectUrl) {
+      safeRedirect(data.redirectUrl);
+    }
+  } catch (error) {
+    showFeedback(
+      feedback,
+      "error",
+      "Falha de comunicacao com o servico de login. Tente novamente em instantes."
+    );
+  } finally {
+    setLoading(button, false, "Entrar");
+  }
 }
 
 async function handleSignupSubmit(event) {
@@ -843,7 +871,6 @@ function handleResetPasswordRequest() {
   }
 
   const payload = {
-    action: "reset_password",
     email,
     page: "checkin",
     userAgent: navigator.userAgent
@@ -863,20 +890,33 @@ function handleResetPasswordRequest() {
     "Abrindo sua solicitação segura para envio do link..."
   );
 
-  submitWebAppForm(payload);
+  jsonpRequest("reset_password_jsonp", payload)
+    .then((data) => {
+      showFeedback(
+        feedback,
+        data?.ok ? "success" : "error",
+        data?.message || "Nao foi possivel processar seu pedido agora."
+      );
+    })
+    .catch(() => {
+      showFeedback(
+        feedback,
+        "error",
+        "Falha de comunicacao com o servico. Tente novamente em instantes."
+      );
+    })
+    .finally(() => {
+      setLoading(button, false, "Gerar nova senha por email");
+    });
 }
 
 async function postJson(payload) {
-  const body = new URLSearchParams();
-
-  Object.entries(payload || {}).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    body.append(key, String(value));
-  });
-
   const response = await fetch(WEB_APP_URL, {
     method: "POST",
-    body
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(payload || {})
   });
 
   return response.json();
