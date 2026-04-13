@@ -867,13 +867,16 @@ function handleResetPasswordRequest() {
 }
 
 async function postJson(payload) {
+  const body = new URLSearchParams();
+
+  Object.entries(payload || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    body.append(key, String(value));
+  });
+
   const response = await fetch(WEB_APP_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json;charset=utf-8",
-      Accept: "application/json"
-    },
-    body: JSON.stringify(payload)
+    body
   });
 
   return response.json();
