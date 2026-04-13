@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -15,7 +15,7 @@
     href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=Manrope:wght@400;500;700;800&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="styles.css?v=20260323-2">
+  <link rel="stylesheet" href="styles.css?v=20260328-1">
 </head>
 <body>
   <div class="page-shell">
@@ -99,8 +99,8 @@
           <article class="info-chip">
             <h3>Quais dados são coletados</h3>
             <p>
-              Nome, email, data de aniversário, instituição, vínculo com oficinas e
-              telefone com DDD.
+              Nome, email, data de nascimento para classificação etária no cadastro,
+              instituição, vínculo com oficinas e telefone com DDD.
             </p>
           </article>
           <article class="info-chip">
@@ -128,7 +128,7 @@
           </div>
           <p class="panel-shell__meta">
             Termo vigente:
-            <strong id="termsVersion">2026-04-v1</strong>
+                    <strong id="termsVersion">2026-04-v1</strong>
           </p>
         </div>
 
@@ -216,28 +216,15 @@
           <section class="tab-panel" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
             <div class="panel-card">
               <div class="panel-card__header">
-                <h3>Cadastro / Signup</h3>
+                <h3>Cadastro</h3>
                 <p>
-                  O cadastro pode ser preenchido diretamente no formulário seguro do
-                  Google, dentro do mesmo ecossistema do backend. Ao final, enviaremos
-                  um link de confirmação para o seu email.
+                  Preencha o cadastro integrado ao check-in. Os dados seguem direto
+                  para o backend, com validação segura, confirmação por email e
+                  classificação etária feita no servidor.
                 </p>
               </div>
 
-              <div class="signup-embed" id="signupEmbedShell" hidden>
-                <p class="form-note" id="signupEmbedNote">
-                  Carregando formulário de cadastro...
-                </p>
-                <iframe
-                  id="signupEmbedFrame"
-                  title="Formulário de cadastro do Laboratório Cordel 2.0"
-                  loading="lazy"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  src="about:blank">
-                </iframe>
-              </div>
-
-              <form id="signupForm" novalidate hidden>
+              <form id="signupForm" novalidate>
                 <div class="form-grid">
                   <div class="field field--full">
                     <label for="signupNome">Nome completo</label>
@@ -332,7 +319,8 @@
 
                 <p class="form-note">
                   Depois da confirmação por email, você receberá um link para definir sua
-                  própria senha. Se quiser, poderá trocar novamente a qualquer momento.
+                  própria senha. O email de boas-vindas será enviado após a primeira
+                  definição de senha.
                 </p>
                 <div class="feedback" id="signupFeedback" role="status" aria-live="polite"></div>
               </form>
@@ -395,7 +383,7 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260323-2" defer></script>
+  <script src="app.js?v=20260406-1" defer></script>
 </body>
 </html>
 
