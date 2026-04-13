@@ -17,7 +17,7 @@
     PROJECT_URL: 'https://www.cordel2pontozero.com/',
     LAB_URL: 'https://www.cordel2pontozero.com/laboratorio',
     CHECKIN_URL: 'https://www.cordel2pontozero.com/checkin',
-    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbykmutZ7xPYOwazCvr74YK_W3NBpWRl1Dcm5pH5SY5H5xKR1BnK04-IZcU-fz5hkblb/exec',
+    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbxbMB-LjETyDv0up9rnbyU7OblhzFLUW9GYhFeE8OcggbvwtW7sYtYy5qxfuiIhIfFo/exec',
     PROJECT_TIME_ZONE: 'America/Sao_Paulo',
     LAB_ACCESS_TOKEN_TTL_MINUTES: '10',
     LAB_BROWSER_SESSION_TTL_MINUTES: '240',
