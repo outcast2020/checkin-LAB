@@ -10,6 +10,7 @@
     ACCESS_LOG: 'ACCESS_LOG'
   },
   DEFAULTS: {
+    SPREADSHEET_ID: '130CvfT6mwv0gzYQgmrylg4Q0T5xRI918dms8A4yzqO8',
     PROJECT_NAME: 'Laboratório Cordel 2.0',
     TERMS_VERSION: '2026-04-v1',
     TERMS_URL: 'https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf',
@@ -1776,10 +1777,16 @@ function findLatestBackupFileForSheet_(folder, spreadsheetName, sheetName) {
 function getLabSpreadsheet_(allowCreate) {
   const props = PropertiesService.getScriptProperties();
   const savedId = cleanText_(props.getProperty(LAB_CFG.PROPERTIES.SPREADSHEET_ID));
+  const fallbackId = cleanText_(LAB_CFG.DEFAULTS.SPREADSHEET_ID);
+  const resolvedId = savedId || fallbackId;
 
-  if (savedId) {
+  if (resolvedId) {
     try {
-      return SpreadsheetApp.openById(savedId);
+      const resolvedSpreadsheet = SpreadsheetApp.openById(resolvedId);
+      if (resolvedSpreadsheet && cleanText_(resolvedSpreadsheet.getId())) {
+        props.setProperty(LAB_CFG.PROPERTIES.SPREADSHEET_ID, resolvedSpreadsheet.getId());
+      }
+      return resolvedSpreadsheet;
     } catch (err) {
       if (!allowCreate) {
         throw new Error('A planilha configurada não foi encontrada. Execute setupLabCheckin() novamente.');
