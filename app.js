@@ -293,7 +293,9 @@ function renderPasswordSetupBridge(email, token) {
   form.appendChild(feedback);
   form.appendChild(actions);
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     const password = normalizeUnicodeText(form.elements.senha.value.trim());
     const confirmation = normalizeUnicodeText(form.elements.senhaConfirmacao.value.trim());
     form.elements.senha.value = password;
@@ -301,10 +303,69 @@ function renderPasswordSetupBridge(email, token) {
     const validationMessage = validatePasswordChoice(password, confirmation);
 
     if (validationMessage) {
-      event.preventDefault();
       showFeedback(feedback, "error", validationMessage);
       return;
     }
+
+    setLoading(submit, true, "Salvando sua senha...");
+
+    try {
+      const data = await submitPasswordSetupBridge({
+        email,
+        token,
+        senha: password,
+        senhaConfirmacao: confirmation
+      });
+
+      if (!data?.ok) {
+        showFeedback(
+          feedback,
+          "error",
+          data?.message || "NÃ£o foi possÃ­vel salvar sua senha agora. Tente novamente."
+        );
+        return;
+      }
+
+      const redirectUrl = cleanValue(
+        data.primaryActionUrl || data.redirectUrl,
+        state.config.labUrl || DEFAULT_LAB_URL
+      );
+
+      renderBridgeState({
+        eyebrow: "Senha salva com sucesso",
+        title: data.title || "Acesso preparado",
+        message:
+          data.message ||
+          "Sua senha foi salva. Estamos preparando sua entrada segura no LaboratÃ³rio Cordel 2.0.",
+        quote: getBridgeQuote(2),
+        loading: !!redirectUrl,
+        note: redirectUrl
+          ? "Se o redirecionamento nÃ£o acontecer automaticamente, use o botÃ£o abaixo."
+          : "",
+        actions: buildBridgeActions({
+          primaryLabel: data.primaryActionLabel || "Ir para o laboratÃ³rio",
+          primaryUrl: redirectUrl || state.config.labUrl || DEFAULT_LAB_URL,
+          secondaryLabel: "Voltar ao check-in",
+          secondaryUrl: state.config.checkinUrl || DEFAULT_CHECKIN_URL,
+          allowClose: true,
+          closeLabel: data.closeLabel || "Fechar janela"
+        })
+      });
+
+      if (redirectUrl) {
+        safeRedirect(redirectUrl);
+      }
+    } catch (error) {
+      showFeedback(
+        feedback,
+        "error",
+        "Falha de comunicaÃ§Ã£o ao salvar a senha. Tente novamente em instantes."
+      );
+    } finally {
+      setLoading(submit, false, "Salvar minha senha");
+    }
+
+    return;
 
     showFeedback(feedback, "success", "Salvando sua nova senha com segurança...");
   });
@@ -341,6 +402,18 @@ function addHiddenInput(form, name, value) {
   input.name = name;
   input.value = value;
   form.appendChild(input);
+}
+
+async function submitPasswordSetupBridge(payload) {
+  return postJson({
+    action: "set_password_json",
+    email: payload?.email,
+    token: payload?.token,
+    senha: payload?.senha,
+    senhaConfirmacao: payload?.senhaConfirmacao,
+    page: "checkin_set_password",
+    userAgent: navigator.userAgent
+  });
 }
 
 function createPasswordField(labelText, name, placeholder) {
@@ -507,15 +580,55 @@ function setupTabs() {
 
 function setupMasks() {
   const birthInput = document.querySelector("#signupBirth");
+  const phoneCountryInput = document.querySelector("#signupPhoneCountry");
+  const phoneCountryCustomInput = document.querySelector("#signupPhoneCountryCustom");
   const phoneInput = document.querySelector("#signupPhone");
 
   birthInput?.addEventListener("input", () => {
     birthInput.value = maskDate(birthInput.value);
   });
 
-  phoneInput?.addEventListener("input", () => {
-    phoneInput.value = maskPhone(phoneInput.value);
+  const syncPhoneField = () => {
+    const dialCode = resolvePhoneDialCode(
+      phoneCountryInput?.value,
+      phoneCountryCustomInput?.value
+    );
+    const usesCustomCode = phoneCountryInput?.value === "custom";
+    const isBrazil = dialCode === "+55";
+
+    if (phoneCountryCustomInput) {
+      phoneCountryCustomInput.hidden = !usesCustomCode;
+      phoneCountryCustomInput.disabled = !usesCustomCode;
+
+      if (usesCustomCode) {
+        phoneCountryCustomInput.value = dialCode || phoneCountryCustomInput.value || "+";
+      } else {
+        phoneCountryCustomInput.value = "";
+      }
+    }
+
+    if (phoneInput) {
+      phoneInput.maxLength = isBrazil ? 15 : 18;
+      phoneInput.placeholder = isBrazil ? "(71) 99999-9999" : "650 555 1234";
+      phoneInput.value = maskPhone(phoneInput.value, dialCode);
+    }
+  };
+
+  phoneCountryInput?.addEventListener("change", syncPhoneField);
+  phoneCountryCustomInput?.addEventListener("input", () => {
+    phoneCountryCustomInput.value = normalizePhoneDialCode(phoneCountryCustomInput.value);
+    syncPhoneField();
   });
+
+  phoneInput?.addEventListener("input", () => {
+    const dialCode = resolvePhoneDialCode(
+      phoneCountryInput?.value,
+      phoneCountryCustomInput?.value
+    );
+    phoneInput.value = maskPhone(phoneInput.value, dialCode);
+  });
+
+  syncPhoneField();
 }
 
 function setupConsentLocks() {
@@ -746,10 +859,18 @@ async function handleSignupSubmit(event) {
   const dataAniversario = maskDate(form.dataAniversario.value);
   const instituicao = form.instituicao.value.trim();
   const oficinasCordel = form.oficinasCordel.value;
-  const telefone = maskPhone(form.telefone.value);
+  const phoneDialCode = resolvePhoneDialCode(
+    form.telefonePais?.value,
+    form.telefonePaisCustom?.value
+  );
+  const telefoneLocal = maskPhone(form.telefone.value, phoneDialCode);
+  const telefone = buildPhonePayload(phoneDialCode, telefoneLocal);
 
   form.dataAniversario.value = dataAniversario;
-  form.telefone.value = telefone;
+  form.telefone.value = telefoneLocal;
+  if (form.telefonePaisCustom && form.telefonePais?.value === "custom") {
+    form.telefonePaisCustom.value = phoneDialCode;
+  }
 
   if (nome.length < 3) {
     showFeedback(feedback, "error", "Informe seu nome completo.");
@@ -780,8 +901,8 @@ async function handleSignupSubmit(event) {
     return;
   }
 
-  if (!isValidPhone(telefone)) {
-    showFeedback(feedback, "error", "Informe telefone com DDD.");
+  if (!isValidPhone(telefoneLocal, phoneDialCode)) {
+    showFeedback(feedback, "error", "Informe telefone com código do país e número válido.");
     return;
   }
 
@@ -1139,24 +1260,65 @@ function maskDate(value) {
   return parts.join("/");
 }
 
-function maskPhone(value) {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
+function normalizePhoneDialCode(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+  return digits ? `+${digits}` : "";
+}
 
-  if (digits.length <= 2) return digits ? `(${digits}` : "";
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+function resolvePhoneDialCode(selectedValue, customValue) {
+  if (String(selectedValue || "").trim() === "custom") {
+    return normalizePhoneDialCode(customValue);
   }
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+
+  return normalizePhoneDialCode(selectedValue || "+55");
+}
+
+function buildPhonePayload(dialCode, localPhone) {
+  const safeDialCode = normalizePhoneDialCode(dialCode || "+55");
+  const localDigits = String(localPhone || "").replace(/\D/g, "");
+
+  if (!safeDialCode || !localDigits) return localDigits;
+  return `${safeDialCode} ${localDigits}`;
+}
+
+function maskPhone(value, dialCode = "+55") {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (dialCode === "+55") {
+    const localDigits = digits.slice(0, 11);
+
+    if (localDigits.length <= 2) return localDigits ? `(${localDigits}` : "";
+    if (localDigits.length <= 6) return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2)}`;
+    if (localDigits.length <= 10) {
+      return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 6)}-${localDigits.slice(6)}`;
+    }
+    return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 7)}-${localDigits.slice(7)}`;
+  }
+
+  const localDigits = digits.slice(0, 15);
+  if (localDigits.length <= 3) return localDigits;
+  if (localDigits.length <= 7) return `${localDigits.slice(0, 3)} ${localDigits.slice(3)}`;
+  if (localDigits.length <= 11) {
+    return `${localDigits.slice(0, 3)} ${localDigits.slice(3, 7)} ${localDigits.slice(7)}`;
+  }
+  return `${localDigits.slice(0, 3)} ${localDigits.slice(3, 7)} ${localDigits.slice(7, 11)} ${localDigits.slice(11)}`;
 }
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 }
 
-function isValidPhone(value) {
-  const digits = String(value || "").replace(/\D/g, "");
-  return digits.length >= 10 && digits.length <= 11;
+function isValidPhone(value, dialCode = "+55") {
+  const localDigits = String(value || "").replace(/\D/g, "");
+  const dialDigits = String(dialCode || "").replace(/\D/g, "");
+  const totalDigits = `${dialDigits}${localDigits}`;
+
+  if (!dialDigits) return false;
+  if (dialCode === "+55") {
+    return localDigits.length >= 10 && localDigits.length <= 11;
+  }
+
+  return localDigits.length >= 6 && totalDigits.length >= 8 && totalDigits.length <= 15;
 }
 
 function isValidBirthDate(value) {

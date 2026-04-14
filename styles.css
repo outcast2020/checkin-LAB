@@ -617,7 +617,9 @@ p {
   color: var(--ink);
 }
 
-.field input {
+.field input,
+.field select,
+#signupPhoneCountryCustom {
   width: 100%;
   min-height: 3.35rem;
   padding: 0.92rem 1rem;
@@ -627,13 +629,43 @@ p {
   color: var(--ink);
 }
 
-.field input::placeholder {
+.field input::placeholder,
+#signupPhoneCountryCustom::placeholder {
   color: #8b7f77;
 }
 
-.field input:focus-visible {
+.field input:focus-visible,
+.field select:focus-visible,
+#signupPhoneCountryCustom:focus-visible {
   outline: 3px solid rgba(238, 142, 0, 0.22);
   border-color: rgba(18, 57, 70, 0.45);
+}
+
+.field select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(18, 57, 70, 0.85) 50%),
+    linear-gradient(135deg, rgba(18, 57, 70, 0.85) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.15rem) calc(50% - 0.18rem),
+    calc(100% - 0.8rem) calc(50% - 0.18rem);
+  background-size: 0.42rem 0.42rem, 0.42rem 0.42rem;
+  background-repeat: no-repeat;
+  padding-right: 2.4rem;
+}
+
+.phone-field__row {
+  display: grid;
+  gap: 0.7rem;
+}
+
+#signupPhoneCountryCustom {
+  margin-top: 0.7rem;
+}
+
+.field__hint {
+  font-size: 0.84rem;
+  color: var(--ink-soft);
 }
 
 .choice-group {
@@ -873,6 +905,11 @@ p {
 
   .field--full {
     grid-column: 1 / -1;
+  }
+
+  .phone-field__row {
+    grid-template-columns: minmax(190px, 240px) 1fr;
+    align-items: start;
   }
 
   .terms-summary {
