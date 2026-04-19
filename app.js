@@ -2,6 +2,8 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyIqooRGsHdwRAdDxm7
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/laboratorio";
+const EDUCATOR_LAB_URL = "https://www.cordel2pontozero.com/lab-educador";
+const EDUCATOR_LAB_LABEL = "Saiba mais sem cadastro";
 const DEFAULT_CHECKIN_URL =
   typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
 const DEFAULT_FORM_PUBLISHED_URL = "";
@@ -26,6 +28,8 @@ const state = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  ensureEducatorFloatingLink();
+
   if (handleBridgeRoute()) {
     return;
   }
@@ -37,6 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
   hydrateUi();
   loadRemoteConfig();
 });
+
+function ensureEducatorFloatingLink() {
+  if (!document.body) {
+    return;
+  }
+
+  let link = document.getElementById("educatorFloatingLink");
+
+  if (!link) {
+    link = document.createElement("a");
+    link.id = "educatorFloatingLink";
+    link.className = "floating-educator-link";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+  }
+
+  link.href = EDUCATOR_LAB_URL;
+  link.textContent = EDUCATOR_LAB_LABEL;
+  link.title = EDUCATOR_LAB_LABEL;
+  link.setAttribute("aria-label", EDUCATOR_LAB_LABEL);
+}
 
 function handleBridgeRoute() {
   const currentUrl = new URL(window.location.href);
@@ -152,6 +178,7 @@ function renderBridgeState(options) {
 
   shell.appendChild(card);
   document.body.appendChild(shell);
+  ensureEducatorFloatingLink();
 }
 
 function runConfirmationJsonp(email, token) {
@@ -377,6 +404,7 @@ function renderPasswordSetupBridge(email, token) {
   card.appendChild(form);
   shell.appendChild(card);
   document.body.appendChild(shell);
+  ensureEducatorFloatingLink();
 }
 
 function submitWebAppForm(payload) {
