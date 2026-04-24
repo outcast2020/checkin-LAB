@@ -10,7 +10,7 @@ const LAB_CFG = {
     ACCESS_LOG: 'ACCESS_LOG'
   },
   DEFAULTS: {
-    SPREADSHEET_ID: '130CvfT6mwv0gzYQgmrylg4Q0T5xRI918dms8A4yzqO8',
+    SPREADSHEET_ID: '',
     PROJECT_NAME: 'Laboratório Cordel 2.0',
     TERMS_VERSION: '2026-04-v1',
     TERMS_URL: 'https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf',
@@ -18,7 +18,7 @@ const LAB_CFG = {
     PROJECT_URL: 'https://www.cordel2pontozero.com/',
     LAB_URL: 'https://www.cordel2pontozero.com/laboratorio',
     CHECKIN_URL: 'https://www.cordel2pontozero.com/checkin',
-    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyIqooRGsHdwRAdDxm75U_UH4hp0Mtmxl9Pv_FkxBUU21_A_RwdqCfvsAcYtNft3cHN/exec',
+    WEB_APP_URL: '',
     PROJECT_TIME_ZONE: 'America/Sao_Paulo',
     LAB_ACCESS_TOKEN_TTL_MINUTES: '10',
     LAB_BROWSER_SESSION_TTL_MINUTES: '240',
