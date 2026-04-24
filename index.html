@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta
     name="description"
-    content="Check-in ético e informado do Laboratório Cordel 2.0, com foco em consentimento, LGPD e boa experiência de acesso."
+    content="Cadastro ético e informado do Laboratório Cordel 2.0, com foco em consentimento, LGPD e boa experiência de participação."
   >
-  <title>CHECK-IN do Laboratório Cordel 2.0</title>
+  <title>Cadastro do Laboratório Cordel 2.0</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
     href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=Manrope:wght@400;500;700;800&display=swap"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="styles.css?v=20260419-1">
+  <link rel="stylesheet" href="styles.css?v=20260323-2">
 </head>
 <body>
   <div class="page-shell">
@@ -27,10 +27,10 @@
           alt="Logo do Cordel 2.0"
         >
         <div class="hero__copy">
-          <p class="eyebrow">Check-in Ético e Informado</p>
-          <h1 id="projectName">CHECK-IN do Laboratório Cordel 2.0</h1>
+          <p class="eyebrow">Cadastro Ético e Informado</p>
+          <h1 id="projectName">Cadastro do Laboratório Cordel 2.0</h1>
           <p class="hero__lead">
-            Um ponto de entrada simples, acolhedor e responsável para acesso, cadastro
+            Um cadastro simples, acolhedor e responsável para participação, consentimento
             e leitura do termo de uso do projeto.
           </p>
           <p class="hero__welcome">
@@ -61,7 +61,7 @@
         <p class="section-tag">Leia antes de continuar</p>
         <strong>Atenção: nós cuidamos de você e queremos que esteja bem informado.</strong>
         <p>
-          Antes de entrar ou se cadastrar, recomendamos a leitura do termo e da nota
+          Antes de se cadastrar, recomendamos a leitura do termo e da nota
           de privacidade resumida abaixo.
         </p>
         <div class="attention-card__actions">
@@ -99,8 +99,8 @@
           <article class="info-chip">
             <h3>Quais dados são coletados</h3>
             <p>
-              Nome, email, data de nascimento para classificação etária no cadastro,
-              instituição, vínculo com oficinas e telefone com código do país.
+              Nome, email, data de aniversário, instituição, vínculo com oficinas e
+              telefone com DDD.
             </p>
           </article>
           <article class="info-chip">
@@ -123,20 +123,17 @@
       <section class="panel-shell" aria-labelledby="panelTitle">
         <div class="panel-shell__header">
           <div>
-            <p class="section-tag">Acesso e Cadastro</p>
-            <h2 id="panelTitle">Escolha como deseja continuar</h2>
+            <p class="section-tag">Cadastro</p>
+            <h2 id="panelTitle">Preencha seu cadastro para participar</h2>
           </div>
           <p class="panel-shell__meta">
             Termo vigente:
-                    <strong id="termsVersion">2026-04-v1</strong>
+            <strong id="termsVersion">2026-04-v1</strong>
           </p>
         </div>
 
-        <div class="tabs" role="tablist" aria-label="Fluxos do check-in">
-          <button class="tab-button is-active" id="tab-enter" type="button" role="tab" aria-selected="true" aria-controls="panel-enter">
-            Entrar
-          </button>
-          <button class="tab-button" id="tab-signup" type="button" role="tab" aria-selected="false" aria-controls="panel-signup">
+        <div class="tabs tabs--compact" role="tablist" aria-label="Fluxos do cadastro">
+          <button class="tab-button is-active" id="tab-signup" type="button" role="tab" aria-selected="true" aria-controls="panel-signup">
             Cadastro
           </button>
           <button class="tab-button" id="tab-terms" type="button" role="tab" aria-selected="false" aria-controls="panel-terms">
@@ -145,86 +142,31 @@
         </div>
 
         <div class="tab-panels">
-          <section class="tab-panel is-active" id="panel-enter" role="tabpanel" aria-labelledby="tab-enter">
+          <section class="tab-panel is-active" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup">
             <div class="panel-card">
               <div class="panel-card__header">
-                <h3>Entrar no laboratório</h3>
+                <h3>Cadastro / Signup</h3>
                 <p>
-                  Se você já confirmou seu email, entre com a senha que escolheu no link
-                  enviado para sua caixa de entrada.
+                  O cadastro pode ser preenchido diretamente no formulário seguro do
+                  Google, dentro do mesmo ecossistema do backend. Ao final, enviaremos
+                  as orientações adequadas para maiores e menores de idade.
                 </p>
               </div>
 
-              <form id="loginForm" novalidate>
-                <div class="field">
-                  <label for="loginEmail">Email previamente registrado</label>
-                  <input
-                    id="loginEmail"
-                    name="email"
-                    type="email"
-                    inputmode="email"
-                    autocomplete="email"
-                    placeholder="você@exemplo.com"
-                    required
-                  >
-                </div>
-
-                <div class="field">
-                  <label for="loginPassword">Senha</label>
-                  <input
-                    id="loginPassword"
-                    name="senha"
-                    type="password"
-                    maxlength="32"
-                    autocomplete="current-password"
-                    placeholder="Senha escolhida por você"
-                  >
-                </div>
-
-                <label class="consent-box">
-                  <input id="loginConsent" name="consent" type="checkbox">
-                  <span>
-                    Li o termo de uso e compromisso e autorizo o tratamento dos dados
-                    informados para fins de acesso, registro e funcionamento do
-                    Laboratório Cordel 2.0.
-                  </span>
-                </label>
-
-                <div class="action-stack">
-                  <button class="primary-button" id="loginButton" type="submit" disabled>
-                    Entrar
-                  </button>
-                  <button class="secondary-button secondary-button--full" id="resetPasswordButton" type="button">
-                    Esqueci a senha / Quero mudar
-                  </button>
-                </div>
-
-                <p class="form-note">
-                  Após o cadastro, você receberá um link de confirmação por email antes
-                  de ativar o acesso. Depois disso, poderá escolher sua própria senha
-                  sempre que precisar.
+              <div class="signup-embed" id="signupEmbedShell" hidden>
+                <p class="form-note" id="signupEmbedNote">
+                  Carregando formulário de cadastro...
                 </p>
-                <p class="form-note form-note--support">
-                  Se o acesso falhar no navegador, tente abrir em janela privativa ou usar
-                  um navegador atualizado.
-                </p>
-                <div class="feedback" id="loginFeedback" role="status" aria-live="polite"></div>
-              </form>
-            </div>
-          </section>
-
-          <section class="tab-panel" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
-            <div class="panel-card">
-              <div class="panel-card__header">
-                <h3>Cadastro</h3>
-                <p>
-                  Preencha o cadastro integrado ao check-in. Os dados seguem direto
-                  para o backend, com validação segura, confirmação por email e
-                  classificação etária feita no servidor.
-                </p>
+                <iframe
+                  id="signupEmbedFrame"
+                  title="Formulário de cadastro do Laboratório Cordel 2.0"
+                  loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  src="about:blank">
+                </iframe>
               </div>
 
-              <form id="signupForm" novalidate>
+              <form id="signupForm" novalidate hidden>
                 <div class="form-grid">
                   <div class="field field--full">
                     <label for="signupNome">Nome completo</label>
@@ -290,50 +232,17 @@
                   </fieldset>
 
                   <div class="field field--full">
-                    <label for="signupPhone">Telefone</label>
-                    <div class="phone-field__row">
-                      <select
-                        id="signupPhoneCountry"
-                        name="telefonePais"
-                        aria-label="Código do país"
-                      >
-                        <option value="+55" selected>Brasil (+55)</option>
-                        <option value="+54">Argentina (+54)</option>
-                        <option value="+1">Estados Unidos/Canadá (+1)</option>
-                        <option value="+34">Espanha (+34)</option>
-                        <option value="+33">França (+33)</option>
-                        <option value="+44">Reino Unido (+44)</option>
-                        <option value="+351">Portugal (+351)</option>
-                        <option value="+52">México (+52)</option>
-                        <option value="+56">Chile (+56)</option>
-                        <option value="+57">Colômbia (+57)</option>
-                        <option value="custom">Outro código</option>
-                      </select>
-                      <input
-                        id="signupPhone"
-                        name="telefone"
-                        type="tel"
-                        inputmode="tel"
-                        autocomplete="tel-national"
-                        maxlength="15"
-                        placeholder="(71) 99999-9999"
-                        required
-                      >
-                    </div>
+                    <label for="signupPhone">Telefone com DDD</label>
                     <input
-                      id="signupPhoneCountryCustom"
-                      name="telefonePaisCustom"
+                      id="signupPhone"
+                      name="telefone"
                       type="tel"
-                      inputmode="numeric"
-                      autocomplete="tel-country-code"
-                      maxlength="5"
-                      placeholder="+244"
-                      hidden
+                      inputmode="tel"
+                      autocomplete="tel"
+                      maxlength="15"
+                      placeholder="(71) 99999-9999"
+                      required
                     >
-                    <p class="field__hint">
-                      Brasil (+55) vem por padrão. Se precisar, selecione outro país
-                      ou informe outro código internacional.
-                    </p>
                   </div>
                 </div>
 
@@ -347,13 +256,12 @@
                 </label>
 
                 <button class="primary-button" id="signupButton" type="submit" disabled>
-                  Cadastrar e continuar
+                  Cadastrar
                 </button>
 
                 <p class="form-note">
-                  Depois da confirmação por email, você receberá um link para definir sua
-                  própria senha. O email de boas-vindas será enviado após a primeira
-                  definição de senha.
+                  Depois do envio, o laboratório encaminhará as próximas orientações de
+                  acordo com o perfil informado no cadastro.
                 </p>
                 <div class="feedback" id="signupFeedback" role="status" aria-live="polite"></div>
               </form>
@@ -365,7 +273,7 @@
               <div class="panel-card__header">
                 <h3>Termo de uso e compromisso</h3>
                 <p>
-                  A leitura do termo completo é recomendada antes do acesso. Abaixo está
+                  A leitura do termo completo é recomendada antes do cadastro. Abaixo está
                   um resumo em linguagem direta para facilitar a decisão informada.
                 </p>
               </div>
@@ -390,7 +298,7 @@
                   <h4>Sua decisão</h4>
                   <p>
                     Você pode consultar o PDF completo do termo antes de marcar o aceite
-                    e seguir para o laboratório.
+                    e seguir com seu cadastro.
                   </p>
                 </article>
               </div>
@@ -416,8 +324,9 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260419-1" defer></script>
+  <script src="app.js?v=20260323-2" defer></script>
 </body>
 </html>
+
 
 
