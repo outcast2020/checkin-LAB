@@ -2,17 +2,14 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyIqooRGsHdwRAdDxm7
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://www.cordel2pontozero.com/laboratorio";
-const EDUCATOR_LAB_URL = "https://www.cordel2pontozero.com/lab-educador";
-const EDUCATOR_LAB_LABEL = "Saiba mais sem cadastro";
 const DEFAULT_CHECKIN_URL =
   typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
-const DEFAULT_FORM_PUBLISHED_URL = "";
-const DEFAULT_FORM_EMBED_URL = "";
-const DEFAULT_PROJECT_NAME = "Laboratório Cordel 2.0";
+const DEFAULT_FORM_PUBLISHED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform";
+const DEFAULT_FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXupYcDt274DeqAbrPip5UMe2_bciEWvKvm3Ot_1YKiw0-Eg/viewform?embedded=true";
+const DEFAULT_PROJECT_NAME = "Laboratorio Cordel 2.0";
 const DEFAULT_TERMS_VERSION = "2026-04-v1";
 const DEFAULT_PRIVACY_NOTICE =
-  "Coletamos dados mínimos de identificação, acesso e participação para o funcionamento ético e organizado do Laboratório Cordel 2.0.";
-const REDIRECT_DELAY_MS = 1800;
+  "Coletamos dados minimos de identificacao, acesso e participacao para o funcionamento etico e organizado do Laboratorio Cordel 2.0.";
 
 const state = {
   config: {
@@ -22,14 +19,14 @@ const state = {
     privacyNoticeShort: DEFAULT_PRIVACY_NOTICE,
     projectUrl: DEFAULT_PROJECT_URL,
     labUrl: DEFAULT_LAB_URL,
-    checkinUrl: DEFAULT_CHECKIN_URL
+    checkinUrl: DEFAULT_CHECKIN_URL,
+    formPublishedUrl: DEFAULT_FORM_PUBLISHED_URL,
+    formEmbedUrl: DEFAULT_FORM_EMBED_URL
   },
   quoteTimerId: null
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  ensureEducatorFloatingLink();
-
   if (handleBridgeRoute()) {
     return;
   }
@@ -41,28 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
   hydrateUi();
   loadRemoteConfig();
 });
-
-function ensureEducatorFloatingLink() {
-  if (!document.body) {
-    return;
-  }
-
-  let link = document.getElementById("educatorFloatingLink");
-
-  if (!link) {
-    link = document.createElement("a");
-    link.id = "educatorFloatingLink";
-    link.className = "floating-educator-link";
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-  }
-
-  link.href = EDUCATOR_LAB_URL;
-  link.textContent = EDUCATOR_LAB_LABEL;
-  link.title = EDUCATOR_LAB_LABEL;
-  link.setAttribute("aria-label", EDUCATOR_LAB_LABEL);
-}
 
 function handleBridgeRoute() {
   const currentUrl = new URL(window.location.href);
@@ -85,10 +60,10 @@ function handleBridgeRoute() {
 
 function startConfirmationBridge(email, token) {
   renderBridgeState({
-    eyebrow: "Confirmação em andamento",
+    eyebrow: "Confirmacao em andamento",
     title: "Validando seu email com cuidado",
     message:
-      "Estamos confirmando seu acesso em ambiente seguro para preparar a próxima etapa do Laboratório Cordel 2.0.",
+      "Estamos confirmando seu acesso em ambiente seguro para preparar a proxima etapa do Laboratorio Cordel 2.0.",
     quote: getBridgeQuote(0),
     loading: true,
     actions: []
@@ -178,7 +153,6 @@ function renderBridgeState(options) {
 
   shell.appendChild(card);
   document.body.appendChild(shell);
-  ensureEducatorFloatingLink();
 }
 
 function runConfirmationJsonp(email, token) {
@@ -201,13 +175,13 @@ function runConfirmationJsonp(email, token) {
     delete window[callbackName];
     script.remove();
     renderBridgeState({
-      eyebrow: "Confirmação indisponível",
-      title: "Não foi possível validar o email",
+      eyebrow: "Confirmacao indisponivel",
+      title: "Nao foi possivel validar o email",
       message:
-        "O serviço de confirmação não respondeu corretamente. Tente novamente pelo link do email ou solicite um novo envio no check-in.",
+        "O servico de confirmacao nao respondeu corretamente. Tente novamente pelo link do email ou solicite um novo envio pelo cadastro.",
       quote: getBridgeQuote(1),
       actions: buildBridgeActions({
-        primaryLabel: "Voltar ao check-in",
+        primaryLabel: "Voltar ao cadastro",
         primaryUrl: state.config.checkinUrl || DEFAULT_CHECKIN_URL,
         secondaryLabel: "Conhecer o projeto",
         secondaryUrl: state.config.projectUrl || DEFAULT_PROJECT_URL,
@@ -224,8 +198,8 @@ function renderConfirmationResult(payload) {
   const safePayload = payload && typeof payload === "object" ? payload : {};
 
   renderBridgeState({
-    eyebrow: safePayload.ok ? "Acesso preparado" : "Atenção",
-    title: safePayload.title || "Confirmação de email",
+    eyebrow: safePayload.ok ? "Acesso preparado" : "Atencao",
+    title: safePayload.title || "Confirmacao de email",
     message: safePayload.message || "Seu link foi processado.",
     quote: getBridgeQuote(safePayload.ok ? 2 : 3),
     actions: buildBridgeActions({
@@ -254,12 +228,12 @@ function renderPasswordSetupBridge(email, token) {
   eyebrow.textContent = "Escolha sua senha";
 
   const heading = document.createElement("h1");
-  heading.textContent = "Defina seu acesso com segurança";
+  heading.textContent = "Defina seu acesso com seguranca";
 
   const message = document.createElement("p");
   message.className = "redirect-shell__message";
   message.textContent =
-    "Crie uma senha com pelo menos 10 caracteres, usando letras e números. Depois disso, seu acesso ficará pronto para entrar.";
+    "Crie uma senha com pelo menos 10 caracteres, usando letras e numeros. Depois disso, seu acesso ficara pronto para uso nos apps.";
 
   const quote = document.createElement("blockquote");
   quote.className = "redirect-shell__quote";
@@ -269,7 +243,6 @@ function renderPasswordSetupBridge(email, token) {
   form.className = "password-bridge-form";
   form.method = "POST";
   form.action = WEB_APP_URL;
-  form.acceptCharset = "UTF-8";
 
   addHiddenInput(form, "action", "set_password");
   addHiddenInput(form, "email", email);
@@ -286,7 +259,7 @@ function renderPasswordSetupBridge(email, token) {
   const helper = document.createElement("p");
   helper.className = "redirect-shell__note";
   helper.textContent =
-    "Dica: combine uma frase curta que faça sentido para você com números. Exemplo de estrutura: cordel2026lab.";
+    "Dica: combine uma frase curta que faca sentido para voce com numeros. Exemplo de estrutura: cordel2026lab.";
 
   const feedback = document.createElement("div");
   feedback.className = "feedback";
@@ -302,7 +275,7 @@ function renderPasswordSetupBridge(email, token) {
   const back = document.createElement("a");
   back.className = "redirect-shell__button secondary";
   back.href = state.config.checkinUrl || DEFAULT_CHECKIN_URL || DEFAULT_PROJECT_URL;
-  back.textContent = "Voltar ao check-in";
+  back.textContent = "Voltar ao cadastro";
 
   const close = document.createElement("button");
   close.type = "button";
@@ -320,81 +293,18 @@ function renderPasswordSetupBridge(email, token) {
   form.appendChild(feedback);
   form.appendChild(actions);
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const password = normalizeUnicodeText(form.elements.senha.value.trim());
-    const confirmation = normalizeUnicodeText(form.elements.senhaConfirmacao.value.trim());
-    form.elements.senha.value = password;
-    form.elements.senhaConfirmacao.value = confirmation;
+  form.addEventListener("submit", (event) => {
+    const password = form.elements.senha.value.trim();
+    const confirmation = form.elements.senhaConfirmacao.value.trim();
     const validationMessage = validatePasswordChoice(password, confirmation);
 
     if (validationMessage) {
+      event.preventDefault();
       showFeedback(feedback, "error", validationMessage);
       return;
     }
 
-    setLoading(submit, true, "Salvando sua senha...");
-
-    try {
-      const data = await submitPasswordSetupBridge({
-        email,
-        token,
-        senha: password,
-        senhaConfirmacao: confirmation
-      });
-
-      if (!data?.ok) {
-        showFeedback(
-          feedback,
-          "error",
-          data?.message || "NÃ£o foi possÃ­vel salvar sua senha agora. Tente novamente."
-        );
-        return;
-      }
-
-      const redirectUrl = cleanValue(
-        data.primaryActionUrl || data.redirectUrl,
-        state.config.labUrl || DEFAULT_LAB_URL
-      );
-
-      renderBridgeState({
-        eyebrow: "Senha salva com sucesso",
-        title: data.title || "Acesso preparado",
-        message:
-          data.message ||
-          "Sua senha foi salva. Estamos preparando sua entrada segura no LaboratÃ³rio Cordel 2.0.",
-        quote: getBridgeQuote(2),
-        loading: !!redirectUrl,
-        note: redirectUrl
-          ? "Se o redirecionamento nÃ£o acontecer automaticamente, use o botÃ£o abaixo."
-          : "",
-        actions: buildBridgeActions({
-          primaryLabel: data.primaryActionLabel || "Ir para o laboratÃ³rio",
-          primaryUrl: redirectUrl || state.config.labUrl || DEFAULT_LAB_URL,
-          secondaryLabel: "Voltar ao check-in",
-          secondaryUrl: state.config.checkinUrl || DEFAULT_CHECKIN_URL,
-          allowClose: true,
-          closeLabel: data.closeLabel || "Fechar janela"
-        })
-      });
-
-      if (redirectUrl) {
-        safeRedirect(redirectUrl);
-      }
-    } catch (error) {
-      showFeedback(
-        feedback,
-        "error",
-        "Falha de comunicaÃ§Ã£o ao salvar a senha. Tente novamente em instantes."
-      );
-    } finally {
-      setLoading(submit, false, "Salvar minha senha");
-    }
-
-    return;
-
-    showFeedback(feedback, "success", "Salvando sua nova senha com segurança...");
+    showFeedback(feedback, "success", "Salvando sua nova senha com seguranca...");
   });
 
   card.appendChild(eyebrow);
@@ -404,24 +314,6 @@ function renderPasswordSetupBridge(email, token) {
   card.appendChild(form);
   shell.appendChild(card);
   document.body.appendChild(shell);
-  ensureEducatorFloatingLink();
-}
-
-function submitWebAppForm(payload) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = WEB_APP_URL;
-  form.acceptCharset = "UTF-8";
-  form.style.display = "none";
-  form.target = window.top && window.top !== window ? "_top" : "_self";
-
-  Object.entries(payload || {}).forEach(([name, value]) => {
-    if (value === undefined || value === null) return;
-    addHiddenInput(form, name, String(value));
-  });
-
-  document.body.appendChild(form);
-  form.submit();
 }
 
 function addHiddenInput(form, name, value) {
@@ -430,18 +322,6 @@ function addHiddenInput(form, name, value) {
   input.name = name;
   input.value = value;
   form.appendChild(input);
-}
-
-async function submitPasswordSetupBridge(payload) {
-  return postJson({
-    action: "set_password_json",
-    email: payload?.email,
-    token: payload?.token,
-    senha: payload?.senha,
-    senhaConfirmacao: payload?.senhaConfirmacao,
-    page: "checkin_set_password",
-    userAgent: navigator.userAgent
-  });
 }
 
 function createPasswordField(labelText, name, placeholder) {
@@ -464,39 +344,21 @@ function createPasswordField(labelText, name, placeholder) {
   return field;
 }
 
-function normalizeUnicodeText(value) {
-  const text = String(value ?? "");
-  return typeof text.normalize === "function" ? text.normalize("NFC") : text;
-}
-
-function hasLetterCharacter(value) {
-  const text = String(value || "");
-
-  try {
-    return new RegExp("\\p{L}", "u").test(text);
-  } catch (error) {
-    return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(text);
-  }
-}
-
 function validatePasswordChoice(password, confirmation) {
-  const normalizedPassword = normalizeUnicodeText(password).trim();
-  const normalizedConfirmation = normalizeUnicodeText(confirmation).trim();
-
-  if (!normalizedPassword || !normalizedConfirmation) {
+  if (!password || !confirmation) {
     return "Preencha e confirme sua nova senha.";
   }
 
-  if (normalizedPassword !== normalizedConfirmation) {
+  if (password !== confirmation) {
     return "Os dois campos de senha precisam ser iguais.";
   }
 
-  if (normalizedPassword.length < 10) {
+  if (password.length < 10) {
     return "Sua senha precisa ter pelo menos 10 caracteres.";
   }
 
-  if (!hasLetterCharacter(normalizedPassword) || !/\d/.test(normalizedPassword)) {
-    return "Use ao menos uma letra e um número na nova senha.";
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return "Use ao menos uma letra e um numero na nova senha.";
   }
 
   return "";
@@ -576,11 +438,11 @@ function getBridgeQuote(index) {
 
 function getBridgeQuotes() {
   return [
-    "Entrar em um processo de aprendizagem também é um gesto de autonomia e cuidado.",
-    "Cada presença que chega soma memória, voz e futuro ao que estamos construindo.",
-    "Informar com clareza também é parte do respeito que sustenta qualquer experiência transformadora.",
+    "Entrar em um processo de aprendizagem tambem e um gesto de autonomia e cuidado.",
+    "Cada presenca que chega soma memoria, voz e futuro ao que estamos construindo.",
+    "Informar com clareza tambem e parte do respeito que sustenta qualquer experiencia transformadora.",
     "Seguimos com delicadeza, porque toda travessia merece acolhimento e escuta.",
-    "Sua escolha de senha também é um gesto de autoria sobre o próprio caminho."
+    "Sua escolha de senha tambem e um gesto de autoria sobre o proprio caminho."
   ];
 }
 
@@ -608,59 +470,18 @@ function setupTabs() {
 
 function setupMasks() {
   const birthInput = document.querySelector("#signupBirth");
-  const phoneCountryInput = document.querySelector("#signupPhoneCountry");
-  const phoneCountryCustomInput = document.querySelector("#signupPhoneCountryCustom");
   const phoneInput = document.querySelector("#signupPhone");
 
   birthInput?.addEventListener("input", () => {
     birthInput.value = maskDate(birthInput.value);
   });
 
-  const syncPhoneField = () => {
-    const dialCode = resolvePhoneDialCode(
-      phoneCountryInput?.value,
-      phoneCountryCustomInput?.value
-    );
-    const usesCustomCode = phoneCountryInput?.value === "custom";
-    const isBrazil = dialCode === "+55";
-
-    if (phoneCountryCustomInput) {
-      phoneCountryCustomInput.hidden = !usesCustomCode;
-      phoneCountryCustomInput.disabled = !usesCustomCode;
-
-      if (usesCustomCode) {
-        phoneCountryCustomInput.value = dialCode || phoneCountryCustomInput.value || "+";
-      } else {
-        phoneCountryCustomInput.value = "";
-      }
-    }
-
-    if (phoneInput) {
-      phoneInput.maxLength = isBrazil ? 15 : 18;
-      phoneInput.placeholder = isBrazil ? "(71) 99999-9999" : "650 555 1234";
-      phoneInput.value = maskPhone(phoneInput.value, dialCode);
-    }
-  };
-
-  phoneCountryInput?.addEventListener("change", syncPhoneField);
-  phoneCountryCustomInput?.addEventListener("input", () => {
-    phoneCountryCustomInput.value = normalizePhoneDialCode(phoneCountryCustomInput.value);
-    syncPhoneField();
-  });
-
   phoneInput?.addEventListener("input", () => {
-    const dialCode = resolvePhoneDialCode(
-      phoneCountryInput?.value,
-      phoneCountryCustomInput?.value
-    );
-    phoneInput.value = maskPhone(phoneInput.value, dialCode);
+    phoneInput.value = maskPhone(phoneInput.value);
   });
-
-  syncPhoneField();
 }
 
 function setupConsentLocks() {
-  bindConsentToButton("#loginConsent", "#loginButton");
   bindConsentToButton("#signupConsent", "#signupButton");
 }
 
@@ -679,22 +500,18 @@ function bindConsentToButton(checkboxSelector, buttonSelector) {
 }
 
 function setupForms() {
-  const loginForm = document.querySelector("#loginForm");
   const signupForm = document.querySelector("#signupForm");
-  const resetPasswordButton = document.querySelector("#resetPasswordButton");
 
-  loginForm?.addEventListener("submit", handleLoginSubmit);
   signupForm?.addEventListener("submit", handleSignupSubmit);
-  resetPasswordButton?.addEventListener("click", handleResetPasswordRequest);
 }
 
 function hydrateUi() {
-  setText("#projectName", `CHECK-IN do ${state.config.projectName}`);
+  setText("#projectName", `Cadastro do ${state.config.projectName}`);
   setText("#termsVersion", state.config.termsVersion);
   setText("#privacyNotice", state.config.privacyNoticeShort);
   updateTermsLink();
   updateProjectLink();
-  updateSignupFormVisibility();
+  updateSignupEmbed();
 }
 
 function parseTermsVersion(value) {
@@ -770,105 +587,17 @@ async function loadRemoteConfig() {
       privacyNoticeShort: cleanValue(data.privacyNoticeShort, DEFAULT_PRIVACY_NOTICE),
       projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL),
       labUrl: cleanValue(data.labUrl, DEFAULT_LAB_URL),
-      checkinUrl: cleanValue(data.checkinUrl, DEFAULT_CHECKIN_URL)
+      checkinUrl: cleanValue(data.checkinUrl, DEFAULT_CHECKIN_URL),
+      formPublishedUrl: cleanValue(data.formPublishedUrl, DEFAULT_FORM_PUBLISHED_URL),
+      formEmbedUrl: cleanValue(data.formEmbedUrl, DEFAULT_FORM_EMBED_URL)
     };
 
     hydrateUi();
   } catch (error) {
     setText(
       "#termsStatus",
-      "Não foi possível carregar a configuração remota. O site segue com os valores locais."
+      "Nao foi possivel carregar a configuracao remota. O site segue com os valores locais."
     );
-  }
-}
-
-async function handleLoginSubmit(event) {
-  event.preventDefault();
-
-  const form = event.currentTarget;
-  const feedback = document.querySelector("#loginFeedback");
-  const button = document.querySelector("#loginButton");
-  const email = form.email.value.trim().toLowerCase();
-  const senha = normalizeUnicodeText(String(form.senha?.value || "").trim());
-  const consentAccepted = document.querySelector("#loginConsent")?.checked;
-
-  if (form.senha) {
-    form.senha.value = senha;
-  }
-
-  clearFeedback(feedback);
-
-  if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para continuar.");
-    return;
-  }
-
-  if (!consentAccepted) {
-    showFeedback(feedback, "error", "É necessário aceitar o termo para entrar.");
-    return;
-  }
-
-  if (!hasWebAppUrl()) {
-    showFeedback(
-      feedback,
-      "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
-    );
-    return;
-  }
-
-  const payload = {
-    email,
-    senha,
-    consentAccepted: true,
-    termsVersion: state.config.termsVersion,
-    page: "checkin",
-    userAgent: navigator.userAgent
-  };
-
-  console.log("[cordel-checkin] login_form:submit", {
-    email,
-    page: payload.page,
-    target: WEB_APP_URL,
-    topLevel: window.top !== window
-  });
-
-  setLoading(button, true, "Entrando...");
-  showFeedback(
-    feedback,
-    "success",
-    "Abrindo seu acesso seguro ao laboratório..."
-  );
-
-  try {
-    const data = await jsonpRequest("login_jsonp", payload);
-
-    if (!data?.ok) {
-      showFeedback(
-        feedback,
-        "error",
-        data?.message || "Nao foi possivel validar seu acesso agora."
-      );
-      return;
-    }
-
-    showFeedback(
-      feedback,
-      "success",
-      "Acesso validado. Redirecionando para o laboratorio..."
-    );
-
-    if (data?.redirectUrl) {
-      safeRedirect(data.redirectUrl);
-    }
-  } catch (error) {
-    showFeedback(
-      feedback,
-      "error",
-      "Falha de comunicacao com o servico de login. Tente novamente em instantes."
-    );
-  } finally {
-    setLoading(button, false, "Entrar");
   }
 }
 
@@ -887,18 +616,10 @@ async function handleSignupSubmit(event) {
   const dataAniversario = maskDate(form.dataAniversario.value);
   const instituicao = form.instituicao.value.trim();
   const oficinasCordel = form.oficinasCordel.value;
-  const phoneDialCode = resolvePhoneDialCode(
-    form.telefonePais?.value,
-    form.telefonePaisCustom?.value
-  );
-  const telefoneLocal = maskPhone(form.telefone.value, phoneDialCode);
-  const telefone = buildPhonePayload(phoneDialCode, telefoneLocal);
+  const telefone = maskPhone(form.telefone.value);
 
   form.dataAniversario.value = dataAniversario;
-  form.telefone.value = telefoneLocal;
-  if (form.telefonePaisCustom && form.telefonePais?.value === "custom") {
-    form.telefonePaisCustom.value = phoneDialCode;
-  }
+  form.telefone.value = telefone;
 
   if (nome.length < 3) {
     showFeedback(feedback, "error", "Informe seu nome completo.");
@@ -906,7 +627,7 @@ async function handleSignupSubmit(event) {
   }
 
   if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido.");
+    showFeedback(feedback, "error", "Informe um email valido.");
     return;
   }
 
@@ -916,7 +637,7 @@ async function handleSignupSubmit(event) {
   }
 
   if (!instituicao) {
-    showFeedback(feedback, "error", "Informe a instituição ou escreva 'Não se aplica'.");
+    showFeedback(feedback, "error", "Informe a instituicao ou escreva 'Nao se aplica'.");
     return;
   }
 
@@ -924,18 +645,18 @@ async function handleSignupSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "Informe se você fez ou está nas oficinas do Cordel 2.0."
+      "Informe se voce fez ou esta nas oficinas do Cordel 2.0."
     );
     return;
   }
 
-  if (!isValidPhone(telefoneLocal, phoneDialCode)) {
-    showFeedback(feedback, "error", "Informe telefone com código do país e número válido.");
+  if (!isValidPhone(telefone)) {
+    showFeedback(feedback, "error", "Informe telefone com DDD.");
     return;
   }
 
   if (!consentAccepted) {
-    showFeedback(feedback, "error", "É necessário aceitar o consentimento informado.");
+    showFeedback(feedback, "error", "E necessario aceitar o consentimento informado.");
     return;
   }
 
@@ -943,7 +664,7 @@ async function handleSignupSubmit(event) {
     showFeedback(
       feedback,
       "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
+      "A URL do Google Apps Script ainda nao foi configurada em app.js."
     );
     return;
   }
@@ -970,191 +691,42 @@ async function handleSignupSubmit(event) {
     if (!data?.ok) {
       const message =
         data?.code === "EMAIL_JA_CADASTRADO"
-          ? "Já existe um registro com este email. Use a aba Entrar para continuar."
-          : data?.message || "Não foi possível concluir o cadastro agora.";
+          ? "Ja existe um registro com este email. Voce ja pode usar esse email nos apps do laboratorio."
+          : data?.message || "Nao foi possivel concluir o cadastro agora.";
       showFeedback(feedback, "error", message);
       return;
     }
 
     const successMessage =
-      "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá um link para definir sua senha.";
+      "Cadastro recebido com sucesso. Enviaremos as proximas orientacoes de acordo com o perfil informado.";
 
-    showFeedback(
-      feedback,
-      "success",
-      "Cadastro recebido com sucesso. Enviamos um link de confirmação para seu email. Depois de confirmar, você receberá um link para definir sua senha. O email de boas-vindas será enviado após a primeira definição de senha."
-    );
+    showFeedback(feedback, "success", successMessage);
     form.reset();
     document.querySelector("#signupButton").disabled = true;
   } catch (error) {
     showFeedback(
       feedback,
       "error",
-      "Falha de comunicação com o serviço. Tente novamente em instantes."
+      "Falha de comunicacao com o servico. Tente novamente em instantes."
     );
   } finally {
-    setLoading(button, false, "Cadastrar e continuar");
+    setLoading(button, false, "Cadastrar");
   }
-}
-
-function handleResetPasswordRequest() {
-  const form = document.querySelector("#loginForm");
-  const feedback = document.querySelector("#loginFeedback");
-  const button = document.querySelector("#resetPasswordButton");
-  const email = form?.email?.value.trim().toLowerCase() || "";
-
-  clearFeedback(feedback);
-
-  if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para receber um novo link.");
-    return;
-  }
-
-  if (!hasWebAppUrl()) {
-    showFeedback(
-      feedback,
-      "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
-    );
-    return;
-  }
-
-  const payload = {
-    email,
-    page: "checkin",
-    userAgent: navigator.userAgent
-  };
-
-  console.log("[cordel-checkin] reset_password:submit", {
-    email,
-    page: payload.page,
-    target: WEB_APP_URL,
-    topLevel: window.top !== window
-  });
-
-  setLoading(button, true, "Enviando link...");
-  showFeedback(
-    feedback,
-    "success",
-    "Abrindo sua solicitação segura para envio do link..."
-  );
-
-  jsonpRequest("reset_password_jsonp", payload)
-    .then((data) => {
-      showFeedback(
-        feedback,
-        data?.ok ? "success" : "error",
-        data?.message || "Nao foi possivel processar seu pedido agora."
-      );
-    })
-    .catch(() => {
-      showFeedback(
-        feedback,
-        "error",
-        "Falha de comunicacao com o servico. Tente novamente em instantes."
-      );
-    })
-    .finally(() => {
-      setLoading(button, false, "Gerar nova senha por email");
-    });
 }
 
 async function postJson(payload) {
   const response = await fetch(WEB_APP_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "text/plain;charset=utf-8"
+      "Content-Type": "application/json;charset=utf-8",
+      Accept: "application/json"
     },
-    body: JSON.stringify(payload || {})
+    body: JSON.stringify(payload)
   });
 
   return response.json();
 }
 
-function jsonpRequest(action, params) {
-  return new Promise((resolve, reject) => {
-    const callbackName = `labJsonp_${action}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-    const script = document.createElement("script");
-    const url = new URL(WEB_APP_URL);
-
-    url.searchParams.set("action", action);
-    url.searchParams.set("callback", callbackName);
-
-    Object.entries(params || {}).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
-      url.searchParams.set(key, String(value));
-    });
-
-    const cleanup = () => {
-      delete window[callbackName];
-      script.remove();
-    };
-
-    window[callbackName] = (payload) => {
-      cleanup();
-      resolve(payload);
-    };
-
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("JSONP_REQUEST_FAILED"));
-    };
-
-    script.src = url.toString();
-    document.body.appendChild(script);
-  });
-}
-
-function safeRedirect(url) {
-  const target = cleanValue(url, "");
-  if (!target) return;
-
-  window.setTimeout(() => {
-    if (window.parent && window.parent !== window) {
-      try {
-        window.parent.postMessage(
-          {
-            type: "cordel-checkin:navigate",
-            href: target
-          },
-          "*"
-        );
-      } catch (error) {
-        // Se postMessage falhar, segue para os fallbacks abaixo.
-      }
-    }
-
-    try {
-      if (window.top && window.top !== window) {
-        window.top.location.href = target;
-        return;
-      }
-    } catch (error) {
-      // Se o navegador bloquear acesso ao topo, segue para os fallbacks abaixo.
-    }
-
-    try {
-      window.open(target, "_top");
-      return;
-    } catch (error) {
-      // Fallback final para navegacao na propria janela.
-    }
-
-    window.location.href = target;
-  }, REDIRECT_DELAY_MS);
-}
-
-function hasLabAccessRedirect(url) {
-  const target = cleanValue(url, "");
-  if (!target) return false;
-
-  try {
-    const parsed = new URL(target, window.location.origin);
-    return parsed.searchParams.has("access_token");
-  } catch (error) {
-    return false;
-  }
-}
 function updateTermsLink() {
   const link = document.querySelector("#termsLink");
   const attentionLink = document.querySelector("#attentionTermsLink");
@@ -1175,7 +747,7 @@ function updateTermsLink() {
   }
 
   if (hasTermsUrl) {
-    status.textContent = `Versão atual do termo: ${state.config.termsVersion}.`;
+    status.textContent = `Versao atual do termo: ${state.config.termsVersion}.`;
   } else {
     status.textContent =
       "Configure a URL do PDF no Apps Script ou no arquivo app.js para habilitar a leitura completa.";
@@ -1189,21 +761,7 @@ function updateProjectLink() {
   link.href = cleanValue(state.config.projectUrl, DEFAULT_PROJECT_URL);
 }
 
-function updateSignupFormVisibility() {
-  const legacyShell = document.querySelector("#signupEmbedShell");
-  const signupForm = document.querySelector("#signupForm");
-
-  if (legacyShell) {
-    legacyShell.hidden = true;
-  }
-
-  if (signupForm) {
-    signupForm.hidden = false;
-  }
-}
-
 function updateSignupEmbed() {
-  return updateSignupFormVisibility();
   const shell = document.querySelector("#signupEmbedShell");
   const frame = document.querySelector("#signupEmbedFrame");
   const note = document.querySelector("#signupEmbedNote");
@@ -1217,7 +775,7 @@ function updateSignupEmbed() {
     shell.hidden = false;
     fallbackForm.hidden = true;
     note.textContent =
-      "Preencha o formulário abaixo. Depois da confirmação por email, você receberá um link para definir sua senha.";
+      "Preencha o formulario abaixo. Depois do envio, voce recebera as proximas orientacoes do laboratorio.";
     return;
   }
 
@@ -1255,12 +813,6 @@ function setLoading(button, isLoading, loadingText) {
   button.textContent = button.dataset.originalText || button.textContent;
   button.classList.remove("is-loading");
 
-  if (button.id === "loginButton") {
-    const consent = document.querySelector("#loginConsent");
-    button.disabled = !consent?.checked;
-    return;
-  }
-
   if (button.id === "signupButton") {
     const consent = document.querySelector("#signupConsent");
     button.disabled = !consent?.checked;
@@ -1288,65 +840,24 @@ function maskDate(value) {
   return parts.join("/");
 }
 
-function normalizePhoneDialCode(value) {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
-  return digits ? `+${digits}` : "";
-}
+function maskPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
 
-function resolvePhoneDialCode(selectedValue, customValue) {
-  if (String(selectedValue || "").trim() === "custom") {
-    return normalizePhoneDialCode(customValue);
+  if (digits.length <= 2) return digits ? `(${digits}` : "";
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   }
-
-  return normalizePhoneDialCode(selectedValue || "+55");
-}
-
-function buildPhonePayload(dialCode, localPhone) {
-  const safeDialCode = normalizePhoneDialCode(dialCode || "+55");
-  const localDigits = String(localPhone || "").replace(/\D/g, "");
-
-  if (!safeDialCode || !localDigits) return localDigits;
-  return `${safeDialCode} ${localDigits}`;
-}
-
-function maskPhone(value, dialCode = "+55") {
-  const digits = String(value || "").replace(/\D/g, "");
-
-  if (dialCode === "+55") {
-    const localDigits = digits.slice(0, 11);
-
-    if (localDigits.length <= 2) return localDigits ? `(${localDigits}` : "";
-    if (localDigits.length <= 6) return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2)}`;
-    if (localDigits.length <= 10) {
-      return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 6)}-${localDigits.slice(6)}`;
-    }
-    return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 7)}-${localDigits.slice(7)}`;
-  }
-
-  const localDigits = digits.slice(0, 15);
-  if (localDigits.length <= 3) return localDigits;
-  if (localDigits.length <= 7) return `${localDigits.slice(0, 3)} ${localDigits.slice(3)}`;
-  if (localDigits.length <= 11) {
-    return `${localDigits.slice(0, 3)} ${localDigits.slice(3, 7)} ${localDigits.slice(7)}`;
-  }
-  return `${localDigits.slice(0, 3)} ${localDigits.slice(3, 7)} ${localDigits.slice(7, 11)} ${localDigits.slice(11)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 }
 
-function isValidPhone(value, dialCode = "+55") {
-  const localDigits = String(value || "").replace(/\D/g, "");
-  const dialDigits = String(dialCode || "").replace(/\D/g, "");
-  const totalDigits = `${dialDigits}${localDigits}`;
-
-  if (!dialDigits) return false;
-  if (dialCode === "+55") {
-    return localDigits.length >= 10 && localDigits.length <= 11;
-  }
-
-  return localDigits.length >= 6 && totalDigits.length >= 8 && totalDigits.length <= 15;
+function isValidPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 11;
 }
 
 function isValidBirthDate(value) {
