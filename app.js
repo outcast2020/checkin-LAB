@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyIqooRGsHdwRAdDxm75U_UH4hp0Mtmxl9Pv_FkxBUU21_A_RwdqCfvsAcYtNft3cHN/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzuAybNf09Yaou4EslHRUqJMVXDrt0W8MxFM81cnYcGE5Bz36aJovDPvsbs3n5MRw1b/exec";
 const FALLBACK_TERMS_URL = "https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf";
 const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://cordel2pontozero.com/laboratorio";
