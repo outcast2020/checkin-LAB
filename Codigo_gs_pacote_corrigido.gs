@@ -506,7 +506,11 @@ function processConfirmEmail_(payload) {
   if (!userRecord) return { settings: settings, content: { ok: false, title: 'Cadastro não encontrado', message: 'Não localizamos um cadastro compatível com esse link. Você pode realizar um novo cadastro na página de cadastro.', primaryActionLabel: 'Voltar ao cadastro', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
 
   if (String(userRecord.status || '').toUpperCase() === 'ACTIVE' && cleanText_(userRecord.email_confirmed_at)) {
-    return { settings: settings, content: { ok: true, title: 'Email já confirmado', message: 'Seu email já foi confirmado anteriormente. Cada aplicativo validará seu acesso pelo email cadastrado.', primaryActionLabel: 'Conhecer o laboratório', primaryActionUrl: resolveLabUrl_(settings), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+    const welcomeSentNow = sendWelcomeEmailIfNeeded_(ss, settings, userRecord, email, page);
+    const alreadyConfirmedMessage = welcomeSentNow
+      ? 'Seu email já estava confirmado. Enviamos agora o email de boas-vindas correspondente à sua faixa etária.'
+      : 'Seu email já foi confirmado anteriormente. Cada aplicativo validará seu acesso pelo email cadastrado.';
+    return { settings: settings, content: { ok: true, title: 'Email já confirmado', message: alreadyConfirmedMessage, primaryActionLabel: 'Conhecer o laboratório', primaryActionUrl: resolveLabUrl_(settings), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
   }
 
   if (cleanText_(userRecord.email_confirmation_token) !== token) {
@@ -515,18 +519,34 @@ function processConfirmEmail_(payload) {
 
   const now = new Date();
   updateUserFields_(ss, userRecord._rowNumber, { updated_at: now, status: 'ACTIVE', email_confirmed_at: now, email_confirmation_token: '', notes: 'Email confirmado com sucesso.' });
+  const welcomeSent = sendWelcomeEmailIfNeeded_(ss, settings, userRecord, email, page);
+  const confirmationMessage = welcomeSent
+    ? 'Seu email foi confirmado com sucesso. Enviamos seu email de boas-vindas correspondente à sua faixa etária.'
+    : 'Seu email foi confirmado com sucesso. Seu cadastro está ativo para validação por email nos aplicativos do projeto.';
 
-  if (!cleanText_(userRecord.welcome_email_sent_at)) {
-    try {
-      const welcomeTemplate = resolveWelcomeEmailTemplate_(userRecord);
-      if (welcomeTemplate) {
-        sendWelcomeEmail_(settings, email, userRecord.nome, welcomeTemplate);
-        updateUserFields_(ss, userRecord._rowNumber, { updated_at: new Date(), welcome_email_template: welcomeTemplate, welcome_email_sent_at: new Date() });
-      }
-    } catch (err) {}
+  return { settings: settings, content: { ok: true, title: 'Email confirmado com sucesso', message: confirmationMessage, primaryActionLabel: 'Conhecer o laboratório', primaryActionUrl: resolveLabUrl_(settings), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+}
+
+function sendWelcomeEmailIfNeeded_(ss, settings, userRecord, email, page) {
+  if (!userRecord || cleanText_(userRecord.welcome_email_sent_at)) return false;
+
+  try {
+    const welcomeTemplate = resolveWelcomeEmailTemplate_(userRecord);
+    if (!welcomeTemplate) return false;
+
+    sendWelcomeEmail_(settings, email, userRecord.nome, welcomeTemplate);
+    updateUserFields_(ss, userRecord._rowNumber, {
+      updated_at: new Date(),
+      welcome_email_template: welcomeTemplate,
+      welcome_email_sent_at: new Date(),
+      notes: 'Cadastro ativo; email de boas-vindas enviado após confirmação.'
+    });
+    logAccess_(ss, 'email_confirmation', email, 'ALLOWED', 'WELCOME_EMAIL_SENT', page, 'email', '', 'template=' + welcomeTemplate);
+    return true;
+  } catch (err) {
+    logAccess_(ss, 'email_confirmation', email, 'ERROR', 'ENVIO_BOAS_VINDAS_FALHOU', page, 'email', '', String(err));
+    return false;
   }
-
-  return { settings: settings, content: { ok: true, title: 'Email confirmado com sucesso', message: 'Seu cadastro está ativo. Cada aplicativo validará seu acesso pelo email cadastrado.', primaryActionLabel: 'Conhecer o laboratório', primaryActionUrl: resolveLabUrl_(settings), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
 }
 
 function sendConfirmationEmail_(settings, email, nome, token) {
@@ -542,7 +562,7 @@ function sendConfirmationEmail_(settings, email, nome, token) {
     'Para ativar seu acesso com segurança, confirme seu email pelo link abaixo:',
     confirmationUrl,
     '',
-    'Depois da confirmação, seu cadastro ficará ativo para validação por email nos aplicativos do projeto.'
+    'Depois da confirmação, enviaremos seu email de boas-vindas correspondente à sua faixa etária.'
   ].join('\n');
   const htmlBody = buildEmailCardHtml_(settings, {
     eyebrow: 'Confirmação de email',
@@ -551,7 +571,7 @@ function sendConfirmationEmail_(settings, email, nome, token) {
     paragraphs: [
       'Recebemos seu cadastro no ' + projectName + ' e deixamos seu acesso preparado para a próxima etapa.',
       'Para ativar seu cadastro com segurança, confirme seu email no botão abaixo.',
-      'Depois da confirmação, os aplicativos do projeto validarão seu acesso pelo email cadastrado.'
+      'Depois da confirmação, enviaremos seu email de boas-vindas correspondente à sua faixa etária.'
     ],
     primaryLabel: 'Confirmar meu email',
     primaryUrl: confirmationUrl,
@@ -1485,37 +1505,72 @@ function processSignupPayload_(ss, settings, payload, source) {
 
   const existingUser = findUserByEmail_(ss, email);
   if (existingUser) {
+    const existingStatus = String(existingUser.status || '').toUpperCase();
+    if (existingStatus === 'PENDING_EMAIL') {
+      const confirmationToken = cleanText_(existingUser.email_confirmation_token) || generateId_('EML');
+      updateUserFields_(ss, existingUser._rowNumber, {
+        updated_at: now,
+        nome: nome,
+        faixa_etaria_cadastro: audience.faixaEtaria,
+        is_minor: audience.isMinor,
+        instituicao: instituicao,
+        oficinas_cordel: oficinasCordel,
+        phone_hash: sha256_(telefoneDigits),
+        phone_last4: telefoneDigits.slice(-4),
+        consent_current_version: termsVersion,
+        consent_current_at: now,
+        source_page: page,
+        signup_source: flowSource,
+        signup_at: now,
+        email_confirmation_token: confirmationToken,
+        email_confirmation_sent_at: now,
+        welcome_email_template: audience.welcomeTemplate,
+        notes: 'Cadastro pendente; email de confirmação reenviado.'
+      });
+      logConsent_(ss, 'signup_resend_confirmation', cleanText_(existingUser.user_id), email, termsVersion, true, page, flowSource, userAgent, 'Consentimento no reenvio de confirmação');
+
+      try {
+        sendConfirmationEmail_(settings, email, nome, confirmationToken);
+        logAccess_(ss, 'signup', email, 'ALLOWED', 'CONFIRMATION_EMAIL_RESENT', page, flowSource, userAgent, 'classificacao=' + audience.faixaEtaria);
+        return {
+          ok: true,
+          code: 'SIGNUP_CONFIRMATION_SENT',
+          message: 'Cadastro recebido. Reenviamos o email de confirmação. As boas-vindas serão enviadas depois que o email for confirmado.',
+          userId: cleanText_(existingUser.user_id)
+        };
+      } catch (err) {
+        logAccess_(ss, 'signup', email, 'ERROR', 'ENVIO_CONFIRMACAO_FALHOU', page, flowSource, userAgent, String(err));
+        return { ok: false, code: 'ENVIO_CONFIRMACAO_FALHOU', message: 'Cadastro salvo, mas não foi possível enviar o email de confirmação. Tente novamente depois.' };
+      }
+    }
+
     logAccess_(ss, 'signup', email, 'DENIED', 'EMAIL_JA_CADASTRADO', page, flowSource, userAgent, 'user_id=' + cleanText_(existingUser.user_id));
     return { ok: false, code: 'EMAIL_JA_CADASTRADO', message: 'Ja existe um registro com este email.' };
   }
 
   const userId = generateId_('USR');
+  const confirmationToken = generateId_('EML');
   appendObjectRow_(ss.getSheetByName(LAB_CFG.SHEETS.USERS), {
-    user_id: userId, created_at: now, updated_at: now, status: 'ACTIVE', nome: nome, email: email,
+    user_id: userId, created_at: now, updated_at: now, status: 'PENDING_EMAIL', nome: nome, email: email,
     faixa_etaria_cadastro: audience.faixaEtaria, is_minor: audience.isMinor, instituicao: instituicao,
     oficinas_cordel: oficinasCordel, phone_hash: sha256_(telefoneDigits), phone_last4: telefoneDigits.slice(-4),
     consent_current_version: termsVersion, consent_current_at: now, source_page: page, signup_source: flowSource, signup_at: now,
-    email_confirmed_at: now, email_confirmation_token: '', email_confirmation_sent_at: '',
-    welcome_email_template: audience.welcomeTemplate, welcome_email_sent_at: '', notes: 'Cadastro ativo após aceite do termo.'
+    email_confirmed_at: '', email_confirmation_token: confirmationToken, email_confirmation_sent_at: now,
+    welcome_email_template: audience.welcomeTemplate, welcome_email_sent_at: '', notes: 'Cadastro pendente de confirmação de email.'
   });
   logConsent_(ss, 'signup', userId, email, termsVersion, true, page, flowSource, userAgent, 'Consentimento no cadastro');
   
   try {
-    sendWelcomeEmail_(settings, email, nome, audience.welcomeTemplate);
-    const savedUserRecord = findUserByEmail_(ss, email);
-    if (savedUserRecord) {
-      updateUserFields_(ss, savedUserRecord._rowNumber, { updated_at: new Date(), welcome_email_sent_at: new Date(), notes: 'Cadastro ativo; email de boas-vindas enviado.' });
-    }
-    logAccess_(ss, 'signup', email, 'ALLOWED', 'WELCOME_EMAIL_SENT', page, flowSource, userAgent, 'classificacao=' + audience.faixaEtaria);
+    sendConfirmationEmail_(settings, email, nome, confirmationToken);
+    logAccess_(ss, 'signup', email, 'ALLOWED', 'CONFIRMATION_EMAIL_SENT', page, flowSource, userAgent, 'classificacao=' + audience.faixaEtaria);
   } catch (err) {
-    logAccess_(ss, 'signup', email, 'ERROR', 'ENVIO_BOAS_VINDAS_FALHOU', page, flowSource, userAgent, String(err));
-    return { ok: false, code: 'ENVIO_BOAS_VINDAS_FALHOU', message: 'Cadastro salvo, mas nao foi possivel enviar o email de boas-vindas. Tente depois.' };
+    logAccess_(ss, 'signup', email, 'ERROR', 'ENVIO_CONFIRMACAO_FALHOU', page, flowSource, userAgent, String(err));
+    return { ok: false, code: 'ENVIO_CONFIRMACAO_FALHOU', message: 'Cadastro salvo, mas não foi possível enviar o email de confirmação. Tente novamente depois.' };
   }
   return {
     ok: true,
-    code: 'SIGNUP_WELCOME_SENT',
-    message: 'Cadastro recebido. Enviamos o email de boas-vindas e vamos direcionar você ao laboratório.',
-    userId: userId,
-    redirectUrl: resolveLabUrl_(settings)
+    code: 'SIGNUP_CONFIRMATION_SENT',
+    message: 'Cadastro recebido. Enviamos o email de confirmação. As boas-vindas serão enviadas depois que o email for confirmado.',
+    userId: userId
   };
 }

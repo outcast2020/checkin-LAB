@@ -681,19 +681,17 @@ async function handleSignupSubmit(event) {
       return;
     }
 
-    const redirectUrl = cleanValue(
-      data?.redirectUrl || data?.primaryActionUrl,
-      state.config.labUrl || DEFAULT_LAB_URL
-    );
+    const redirectUrl = cleanValue(data?.redirectUrl || data?.primaryActionUrl, "");
 
     showFeedback(
       feedback,
       "success",
-      "Cadastro recebido com sucesso. Enviamos seu email de boas-vindas e vamos abrir o laboratório."
+      data?.message ||
+        "Cadastro recebido com sucesso. Enviamos um email de confirmação. As boas-vindas serão enviadas depois que o email for confirmado."
     );
     form.reset();
     document.querySelector("#signupButton").disabled = true;
-    safeRedirect(redirectUrl);
+    if (redirectUrl) safeRedirect(redirectUrl);
   } catch (error) {
     showFeedback(
       feedback,
