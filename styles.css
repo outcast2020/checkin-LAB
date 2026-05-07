@@ -195,38 +195,6 @@ body::before {
   color: var(--ink-soft);
 }
 
-.password-bridge-form {
-  display: grid;
-  gap: 0.9rem;
-  margin-top: 1.2rem;
-}
-
-.password-bridge-form__field {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.password-bridge-form__field span {
-  font-size: 0.94rem;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.password-bridge-form__field input {
-  width: 100%;
-  min-height: 3.3rem;
-  padding: 0.92rem 1rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.password-bridge-form__field input:focus-visible {
-  outline: 3px solid rgba(233, 130, 0, 0.22);
-  border-color: rgba(233, 130, 0, 0.6);
-}
-
 img {
   display: block;
   max-width: 100%;

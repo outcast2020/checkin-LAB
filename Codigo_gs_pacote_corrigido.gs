@@ -16,21 +16,20 @@ const LAB_CFG = {
     TERMS_URL: 'https://www.cordel2pontozero.com/s/laboratorio_cordel_2_0_termos_referencias_ABRIL2026.pdf',
     PRIVACY_NOTICE_SHORT: 'Coletamos dados mínimos de identificação, acesso e participação para o funcionamento ético e organizado do Laboratório Cordel 2.0.',
     PROJECT_URL: 'https://www.cordel2pontozero.com/',
-    LAB_URL: 'https://www.cordel2pontozero.com/laboratorio',
-    CHECKIN_URL: 'https://www.cordel2pontozero.com/checkin',
+    LAB_URL: 'https://cordel2pontozero.com/laboratorio',
+    CHECKIN_URL: 'https://cadastro.cordel2pontozero.com/',
     WEB_APP_URL: '',
     PROJECT_TIME_ZONE: 'America/Sao_Paulo',
     LAB_ACCESS_TOKEN_TTL_MINUTES: '10',
     LAB_BROWSER_SESSION_TTL_MINUTES: '240',
     TOKEN_HOUSEKEEPING_INTERVAL_MINUTES: '180',
-    PASSWORD_SETUP_TOKEN_TTL_HOURS: '24',
     BACKUP_FOLDER_ID: ''
   }
 };
 
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('Administração Check-in')
+    .createMenu('Administração Cadastro')
     .addItem('Apagar cadastro por email', 'abrirPromptApagarCadastroPorEmail')
     .addSeparator()
     .addItem('Testar email adulto', 'testarEmailBoasVindasAdulto')
@@ -48,8 +47,7 @@ function getUsersSheetHeaders_() {
     'is_minor', 'instituicao', 'oficinas_cordel', 'phone_hash', 'phone_last4',
     'consent_current_version', 'consent_current_at', 'source_page', 'signup_source',
     'signup_at', 'email_confirmed_at', 'email_confirmation_token', 'email_confirmation_sent_at',
-    'auth_password_hash', 'auth_password_updated_at', 'auth_password_token',
-    'auth_password_token_sent_at', 'auth_password_token_expires_at', 'welcome_email_template',
+    'welcome_email_template',
     'welcome_email_sent_at', 'notes'
   ];
 }
@@ -86,12 +84,10 @@ function handleRequest_(e, method) {
     if (action === 'config') return getConfig_();
     if (action === 'confirm') return confirmEmail_(payload);
     if (action === 'confirm_jsonp') return confirmEmailJsonp_(payload);
-    if (action === 'set_password') return setPassword_(payload);
-    if (action === 'set_password_json') return setPasswordJson_(payload);
     if (action === 'validate_lab_access_jsonp') return validateLabAccessJsonp_(payload);
+    if (action === 'validate_email_access') return validateEmailAccess_(payload);
+    if (action === 'validate_email_access_jsonp') return validateEmailAccessJsonp_(payload);
     if (action === 'signup') return signup_(payload);
-    if (action === 'reset_password') return resetPassword_(payload);
-    if (action === 'reset_password_jsonp') return resetPasswordJsonp_(payload);
     if (action === 'login') return login_(payload);
     if (action === 'login_jsonp') return loginJsonp_(payload);
 
@@ -161,7 +157,7 @@ function seedSettings_(ss) {
     CHECKIN_URL: LAB_CFG.DEFAULTS.CHECKIN_URL, WEB_APP_URL: LAB_CFG.DEFAULTS.WEB_APP_URL,
     PROJECT_TIME_ZONE: LAB_CFG.DEFAULTS.PROJECT_TIME_ZONE, LAB_ACCESS_TOKEN_TTL_MINUTES: LAB_CFG.DEFAULTS.LAB_ACCESS_TOKEN_TTL_MINUTES,
     LAB_BROWSER_SESSION_TTL_MINUTES: LAB_CFG.DEFAULTS.LAB_BROWSER_SESSION_TTL_MINUTES, TOKEN_HOUSEKEEPING_INTERVAL_MINUTES: LAB_CFG.DEFAULTS.TOKEN_HOUSEKEEPING_INTERVAL_MINUTES,
-    PASSWORD_SETUP_TOKEN_TTL_HOURS: LAB_CFG.DEFAULTS.PASSWORD_SETUP_TOKEN_TTL_HOURS, BACKUP_FOLDER_ID: LAB_CFG.DEFAULTS.BACKUP_FOLDER_ID
+    BACKUP_FOLDER_ID: LAB_CFG.DEFAULTS.BACKUP_FOLDER_ID
   };
   const rowsToAppend = [];
   Object.keys(defaults).forEach(function(key) { if (!existing[key]) rowsToAppend.push([key, defaults[key]]); });
@@ -177,7 +173,6 @@ function syncCriticalSettings_(ss) {
   upsertSetting_(ss, 'TERMS_VERSION', LAB_CFG.DEFAULTS.TERMS_VERSION);
   upsertSetting_(ss, 'TERMS_URL', LAB_CFG.DEFAULTS.TERMS_URL);
   upsertSetting_(ss, 'TOKEN_HOUSEKEEPING_INTERVAL_MINUTES', LAB_CFG.DEFAULTS.TOKEN_HOUSEKEEPING_INTERVAL_MINUTES);
-  upsertSetting_(ss, 'PASSWORD_SETUP_TOKEN_TTL_HOURS', LAB_CFG.DEFAULTS.PASSWORD_SETUP_TOKEN_TTL_HOURS);
 }
 
 function syncCriticalSettings() {
@@ -288,6 +283,16 @@ function cleanupLegacySignupFormTriggers_() {
     if (trigger.getHandlerFunction() === 'onSignupFormSubmit') ScriptApp.deleteTrigger(trigger);
   });
 }
+function resolveLabUrl_(settings) {
+  const url = cleanText_(settings && settings.LAB_URL);
+  if (!url || url === 'https://www.cordel2pontozero.com/laboratorio') return LAB_CFG.DEFAULTS.LAB_URL;
+  return url;
+}
+function resolveCadastroUrl_(settings) {
+  const url = cleanText_(settings && settings.CHECKIN_URL);
+  if (!url || url === 'https://www.cordel2pontozero.com/checkin') return LAB_CFG.DEFAULTS.CHECKIN_URL;
+  return url;
+}
 function getConfig_() {
   const ss = getLabSpreadsheet_(false);
   const settings = readSettingsMap_(ss);
@@ -298,7 +303,7 @@ function getConfig_() {
     termsUrl: settings.TERMS_URL || LAB_CFG.DEFAULTS.TERMS_URL,
     privacyNoticeShort: settings.PRIVACY_NOTICE_SHORT || LAB_CFG.DEFAULTS.PRIVACY_NOTICE_SHORT,
     projectUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL,
-    labUrl: settings.LAB_URL || LAB_CFG.DEFAULTS.LAB_URL, checkinUrl: settings.CHECKIN_URL || ''
+    labUrl: resolveLabUrl_(settings), cadastroUrl: resolveCadastroUrl_(settings), checkinUrl: resolveCadastroUrl_(settings)
   });
 }
 
@@ -314,7 +319,7 @@ function issueLabAccessToken_(settings, email, userId) {
 }
 
 function buildLabEntryUrl_(settings, token) {
-  const baseUrl = cleanText_(settings.LAB_URL || LAB_CFG.DEFAULTS.LAB_URL);
+  const baseUrl = resolveLabUrl_(settings);
   const sep = baseUrl.indexOf('?') >= 0 ? '&' : '?';
   return baseUrl + sep + 'access_token=' + encodeURIComponent(token);
 }
@@ -323,7 +328,7 @@ function housekeepingTokensCheckin() {
   const ss = getLabSpreadsheet_(false);
   const settings = readSettingsMap_(ss);
   const summary = runTokenHousekeeping_(ss, settings, true);
-  return 'Housekeeping concluído: lab_tokens_removidos=' + summary.labTokensRemoved + '; lab_tokens_corrompidos=' + summary.labTokensCorrupted + '; password_tokens_limpos=' + summary.passwordTokensCleared + '.';
+  return 'Housekeeping concluído: lab_tokens_removidos=' + summary.labTokensRemoved + '; lab_tokens_corrompidos=' + summary.labTokensCorrupted + '.';
 }
 
 function runTokenHousekeeping_(ss, settings, force) {
@@ -334,13 +339,13 @@ function runTokenHousekeeping_(ss, settings, force) {
   const lastRunAt = cleanText_(props.getProperty('LAB_TOKEN_HOUSEKEEPING_LAST_AT'));
 
   if (!force && lastRunAt && !isExpiredDateValue_(new Date(new Date(lastRunAt).getTime() + intervalMinutes * 60 * 1000))) {
-    return { ok: true, skipped: true, reason: 'NOT_DUE', labTokensRemoved: 0, labTokensCorrupted: 0, passwordTokensCleared: 0 };
+    return { ok: true, skipped: true, reason: 'NOT_DUE', labTokensRemoved: 0, labTokensCorrupted: 0 };
   }
 
-  if (!lock.tryLock(5000)) return { ok: false, skipped: true, reason: 'LOCKED', labTokensRemoved: 0, labTokensCorrupted: 0, passwordTokensCleared: 0 };
+  if (!lock.tryLock(5000)) return { ok: false, skipped: true, reason: 'LOCKED', labTokensRemoved: 0, labTokensCorrupted: 0 };
 
   try {
-    let labTokensRemoved = 0, labTokensCorrupted = 0, passwordTokensCleared = 0;
+    let labTokensRemoved = 0, labTokensCorrupted = 0;
     const allProperties = props.getProperties();
 
     Object.keys(allProperties).forEach(function(key) {
@@ -358,33 +363,8 @@ function runTokenHousekeeping_(ss, settings, force) {
       }
     });
 
-    const usersSheet = ss.getSheetByName(LAB_CFG.SHEETS.USERS);
-    if (usersSheet && usersSheet.getLastRow() > 1) {
-      const range = usersSheet.getDataRange();
-      const values = range.getValues();
-      const headers = values;
-      const updatedAtIndex = headers.indexOf('updated_at');
-      const tokenIndex = headers.indexOf('auth_password_token');
-      const tokenSentAtIndex = headers.indexOf('auth_password_token_sent_at');
-      const tokenExpiresAtIndex = headers.indexOf('auth_password_token_expires_at');
-      let usersChanged = false;
-
-      if (tokenIndex >= 0 && tokenExpiresAtIndex >= 0) {
-        for (let i = 1; i < values.length; i++) {
-          const row = values[i];
-          if (!cleanText_(row[tokenIndex]) || !isExpiredDateValue_(row[tokenExpiresAtIndex])) continue;
-          row[tokenIndex] = '';
-          if (tokenSentAtIndex >= 0) row[tokenSentAtIndex] = '';
-          row[tokenExpiresAtIndex] = '';
-          if (updatedAtIndex >= 0) row[updatedAtIndex] = now;
-          passwordTokensCleared++;
-          usersChanged = true;
-        }
-      }
-      if (usersChanged) range.setValues(values);
-    }
     props.setProperty('LAB_TOKEN_HOUSEKEEPING_LAST_AT', now.toISOString());
-    return { ok: true, skipped: false, reason: 'RUN', labTokensRemoved: labTokensRemoved, labTokensCorrupted: labTokensCorrupted, passwordTokensCleared: passwordTokensCleared };
+    return { ok: true, skipped: false, reason: 'RUN', labTokensRemoved: labTokensRemoved, labTokensCorrupted: labTokensCorrupted };
   } finally { lock.releaseLock(); }
 }
 
@@ -409,17 +389,17 @@ function processValidateLabAccessPayload_(ss, settings, payload) {
   const propertyKey = 'LAB_ACCESS_TOKEN_' + hashedToken;
   const raw = props.getProperty(propertyKey);
 
-  if (!raw) return { ok: false, code: 'TOKEN_INVALIDO', message: 'Este link de acesso não está mais disponível. Volte ao check-in para gerar um novo.' };
+  if (!raw) return { ok: false, code: 'TOKEN_INVALIDO', message: 'Este link de acesso não está mais disponível. Volte ao cadastro para gerar um novo.' };
 
   let record = null;
   try { record = JSON.parse(raw); } catch (err) {
     props.deleteProperty(propertyKey);
-    return { ok: false, code: 'TOKEN_INVALIDO', message: 'Não foi possível validar este acesso. Gere um novo link pelo check-in.' };
+    return { ok: false, code: 'TOKEN_INVALIDO', message: 'Não foi possível validar este acesso. Gere um novo link pelo cadastro.' };
   }
 
   if (isExpiredDateValue_(record.expiresAt)) {
     props.deleteProperty(propertyKey);
-    return { ok: false, code: 'TOKEN_EXPIRADO', message: 'Este link de acesso expirou. Entre novamente pelo check-in.' };
+    return { ok: false, code: 'TOKEN_EXPIRADO', message: 'Este link de acesso expirou. Gere um novo acesso pelo cadastro.' };
   }
 
   props.deleteProperty(propertyKey);
@@ -433,9 +413,9 @@ function login_(payload) {
   ensureUsersSheetSchema_(ss, settings);
   const result = processLoginJsonpPayload_(ss, settings, payload);
   const content = result.ok
-    ? { ok: true, title: 'Acesso confirmado', message: 'Seu acesso foi validado com sucesso. Estamos preparando sua entrada segura no laboratório.', primaryActionLabel: 'Ir para o laboratório', primaryActionUrl: cleanText_(result.redirectUrl), secondaryActionLabel: 'Voltar ao check-in', secondaryActionUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL), closeLabel: 'Fechar janela' }
-    : { ok: false, title: 'Não foi possível entrar', message: cleanText_(result.message || 'Revise seus dados e tente novamente.'), primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: cleanText_(settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL), closeLabel: 'Fechar janela' };
-  return passwordResultPage_(content, settings);
+    ? { ok: true, title: 'Acesso confirmado', message: 'Seu acesso foi validado com sucesso. Estamos preparando sua entrada segura no laboratório.', primaryActionLabel: 'Ir para o laboratório', primaryActionUrl: cleanText_(result.redirectUrl), secondaryActionLabel: 'Voltar ao cadastro', secondaryActionUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL), closeLabel: 'Fechar janela' }
+    : { ok: false, title: 'Não foi possível entrar', message: cleanText_(result.message || 'Revise seus dados e tente novamente.'), primaryActionLabel: 'Voltar ao cadastro', primaryActionUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: cleanText_(settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL), closeLabel: 'Fechar janela' };
+  return accessResultPage_(content, settings);
 }
 
 function loginJsonp_(payload) {
@@ -447,18 +427,31 @@ function loginJsonp_(payload) {
   return ContentService.createTextOutput(callback + '(' + JSON.stringify(result) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
+function validateEmailAccess_(payload) {
+  const ss = getLabSpreadsheet_(false);
+  const settings = readSettingsMap_(ss);
+  ensureUsersSheetSchema_(ss, settings);
+  return jsonOut_(processLoginJsonpPayload_(ss, settings, payload));
+}
+
+function validateEmailAccessJsonp_(payload) {
+  const ss = getLabSpreadsheet_(false);
+  const settings = readSettingsMap_(ss);
+  ensureUsersSheetSchema_(ss, settings);
+  const callback = sanitizeJsonpCallback_(payload.callback);
+  const result = processLoginJsonpPayload_(ss, settings, payload);
+  return ContentService.createTextOutput(callback + '(' + JSON.stringify(result) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
 function processLoginJsonpPayload_(ss, settings, payload) {
   runTokenHousekeeping_(ss, settings, false);
   const email = normalizeEmail_(payload.email);
-  const senha = cleanText_(payload.senha);
-  const senhaNormalizada = normalizeAccessPassword_(senha);
   const consentAccepted = toBoolean_(payload.consentAccepted);
   const termsVersion = String(payload.termsVersion || settings.TERMS_VERSION || '').trim();
-  const page = String(payload.page || 'checkin').trim();
+  const page = String(payload.page || 'cadastro').trim();
   const userAgent = String(payload.userAgent || '').trim();
 
   if (!email) return { ok: false, code: 'EMAIL_INVALIDO', message: 'Informe um email válido.' };
-  if (!consentAccepted) return { ok: false, code: 'CONSENTIMENTO_OBRIGATORIO', message: 'É necessário aceitar o termo para continuar.' };
 
   const userRecord = findUserByEmail_(ss, email);
   const allowRecord = findAllowlistedEmail_(ss, email);
@@ -468,26 +461,23 @@ function processLoginJsonpPayload_(ss, settings, payload) {
     const status = String(userRecord.status || '').toUpperCase();
     if (status === 'PENDING_EMAIL') return { ok: false, code: 'EMAIL_NAO_CONFIRMADO', message: 'Seu cadastro foi recebido, mas o email ainda não foi confirmado. Verifique sua caixa de entrada.' };
     if (status !== 'ACTIVE') return { ok: false, code: 'USUARIO_INATIVO', message: 'Seu cadastro existe, mas não está ativo no momento.' };
-    if (!senha) return { ok: false, code: 'SENHA_OBRIGATORIA', message: 'Informe a senha que você definiu para continuar.' };
-    if (!cleanText_(userRecord.auth_password_hash)) return { ok: false, code: 'SENHA_NAO_CONFIGURADA', message: 'Sua senha ainda não está pronta. Use a opção de gerar nova senha por email.' };
-    const storedPasswordHash = cleanText_(userRecord.auth_password_hash);
-    const passwordMatches = sha256_(senha) === storedPasswordHash || (senhaNormalizada && sha256_(senhaNormalizada) === storedPasswordHash);
-    if (!passwordMatches) return { ok: false, code: 'SENHA_INVALIDA', message: 'A senha informada não confere com a senha cadastrada para este acesso.' };
   }
 
-  logConsent_(ss, 'login', userRecord ? userRecord.user_id : '', email, termsVersion, true, page, 'site', userAgent, 'Consentimento no fluxo de entrada');
+  if (consentAccepted) {
+    logConsent_(ss, 'email_access', userRecord ? userRecord.user_id : '', email, termsVersion, true, page, 'app', userAgent, 'Consentimento no fluxo de acesso por email');
+  }
   const labAccess = issueLabAccessToken_(settings, email, userRecord ? userRecord.user_id : '');
   const redirectUrl = buildLabEntryUrl_(settings, labAccess.token);
-  logAccess_(ss, 'login', email, 'ALLOWED', 'OK', page, 'site', userAgent, 'redirect_url=' + redirectUrl);
+  logAccess_(ss, 'email_access', email, 'ALLOWED', 'OK', page, 'app', userAgent, 'redirect_url=' + redirectUrl);
   
-  return { ok: true, code: 'LOGIN_OK', message: 'Acesso validado com sucesso.', redirectUrl: redirectUrl, userType: userRecord ? 'registered' : 'allowlisted' };
+  return { ok: true, code: 'EMAIL_ACCESS_OK', message: 'Email validado com sucesso.', redirectUrl: redirectUrl, userType: userRecord ? 'registered' : 'allowlisted' };
 }
 
 function signup_(payload) {
   const ss = getLabSpreadsheet_(false);
   const settings = readSettingsMap_(ss);
   ensureUsersSheetSchema_(ss, settings);
-  return jsonOut_(processSignupPayload_(ss, settings, payload, 'custom_checkin_form'));
+  return jsonOut_(processSignupPayload_(ss, settings, payload, 'native_cadastro_form'));
 }
 
 function confirmEmail_(payload) {
@@ -510,33 +500,33 @@ function processConfirmEmail_(payload) {
   const token = cleanText_(payload.token);
   const page = cleanText_(payload.page || 'email_confirmation');
 
-  if (!email || !token) return { settings: settings, content: { ok: false, title: 'Link de confirmação inválido', message: 'O link de confirmação está incompleto ou expirado. Volte ao check-in e solicite novo envio.', primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+  if (!email || !token) return { settings: settings, content: { ok: false, title: 'Link de confirmação inválido', message: 'O link de confirmação está incompleto ou expirado. Volte ao cadastro e solicite novo envio.', primaryActionLabel: 'Voltar ao cadastro', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
 
   const userRecord = findUserByEmail_(ss, email);
-  if (!userRecord) return { settings: settings, content: { ok: false, title: 'Cadastro não encontrado', message: 'Não localizamos um cadastro compatível com esse link. Você pode realizar um novo cadastro no check-in.', primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+  if (!userRecord) return { settings: settings, content: { ok: false, title: 'Cadastro não encontrado', message: 'Não localizamos um cadastro compatível com esse link. Você pode realizar um novo cadastro na página de cadastro.', primaryActionLabel: 'Voltar ao cadastro', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
 
   if (String(userRecord.status || '').toUpperCase() === 'ACTIVE' && cleanText_(userRecord.email_confirmed_at)) {
-    return { settings: settings, content: { ok: true, title: 'Email já confirmado', message: 'Seu email já foi confirmado anteriormente. Você já pode entrar com a senha que escolheu.', primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+    return { settings: settings, content: { ok: true, title: 'Email já confirmado', message: 'Seu email já foi confirmado anteriormente. Cada aplicativo validará seu acesso pelo email cadastrado.', primaryActionLabel: 'Conhecer o laboratório', primaryActionUrl: resolveLabUrl_(settings), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
   }
 
   if (cleanText_(userRecord.email_confirmation_token) !== token) {
-    return { settings: settings, content: { ok: false, title: 'Token de confirmação inválido', message: 'Este link não corresponde ao cadastro atual. Solicite um novo email de confirmação no check-in.', primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+    return { settings: settings, content: { ok: false, title: 'Token de confirmação inválido', message: 'Este link não corresponde ao cadastro atual. Solicite um novo email de confirmação na página de cadastro.', primaryActionLabel: 'Voltar ao cadastro', primaryActionUrl: settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
   }
 
   const now = new Date();
   updateUserFields_(ss, userRecord._rowNumber, { updated_at: now, status: 'ACTIVE', email_confirmed_at: now, email_confirmation_token: '', notes: 'Email confirmado com sucesso.' });
-  
-  let passwordMessage = 'Seu email foi confirmado. Se precisar, use a opção de criar uma senha no check-in.';
-  let passwordSetupMeta = null;
-  try {
-    passwordSetupMeta = issuePasswordSetupLinkForUser_(ss, settings, userRecord, 'Link inicial para definir senha enviado após confirmação de email');
-    passwordMessage = 'Seu email foi confirmado e enviamos um link seguro para você definir sua senha.';
-  } catch (err) {}
 
-  const refreshedUserRecord = findUserByEmail_(ss, email);
-  const passwordSetupUrl = refreshedUserRecord ? buildPasswordSetupUrl_(settings, email, cleanText_(refreshedUserRecord.auth_password_token)) : cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL);
-  
-  return { settings: settings, content: { ok: true, title: 'Email confirmado com sucesso', message: 'Seu email foi confirmado com sucesso. ' + passwordMessage, primaryActionLabel: 'Definir minha senha', primaryActionUrl: passwordSetupUrl, secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
+  if (!cleanText_(userRecord.welcome_email_sent_at)) {
+    try {
+      const welcomeTemplate = resolveWelcomeEmailTemplate_(userRecord);
+      if (welcomeTemplate) {
+        sendWelcomeEmail_(settings, email, userRecord.nome, welcomeTemplate);
+        updateUserFields_(ss, userRecord._rowNumber, { updated_at: new Date(), welcome_email_template: welcomeTemplate, welcome_email_sent_at: new Date() });
+      }
+    } catch (err) {}
+  }
+
+  return { settings: settings, content: { ok: true, title: 'Email confirmado com sucesso', message: 'Seu cadastro está ativo. Cada aplicativo validará seu acesso pelo email cadastrado.', primaryActionLabel: 'Conhecer o laboratório', primaryActionUrl: resolveLabUrl_(settings), secondaryActionLabel: 'Conhecer o projeto', secondaryActionUrl: settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL, closeLabel: 'Fechar janela' } };
 }
 
 function sendConfirmationEmail_(settings, email, nome, token) {
@@ -552,7 +542,7 @@ function sendConfirmationEmail_(settings, email, nome, token) {
     'Para ativar seu acesso com segurança, confirme seu email pelo link abaixo:',
     confirmationUrl,
     '',
-    'Depois da confirmação, você receberá um link para definir sua senha.'
+    'Depois da confirmação, seu cadastro ficará ativo para validação por email nos aplicativos do projeto.'
   ].join('\n');
   const htmlBody = buildEmailCardHtml_(settings, {
     eyebrow: 'Confirmação de email',
@@ -560,8 +550,8 @@ function sendConfirmationEmail_(settings, email, nome, token) {
     greeting: 'Olá, ' + participantName + '.',
     paragraphs: [
       'Recebemos seu cadastro no ' + projectName + ' e deixamos seu acesso preparado para a próxima etapa.',
-      'Para ativar o login com segurança, confirme seu email no botão abaixo.',
-      'Depois da confirmação, você receberá um link para definir sua senha.'
+      'Para ativar seu cadastro com segurança, confirme seu email no botão abaixo.',
+      'Depois da confirmação, os aplicativos do projeto validarão seu acesso pelo email cadastrado.'
     ],
     primaryLabel: 'Confirmar meu email',
     primaryUrl: confirmationUrl,
@@ -929,119 +919,14 @@ function apagarCadastroPorEmail_(email) {
   ].join(' | ');
 }
 
-function resetPassword_(payload) {
-  const ss = getLabSpreadsheet_(false);
-  const settings = readSettingsMap_(ss);
-  const result = processResetPasswordPayload_(ss, settings, payload);
-  const content = result.ok
-    ? { ok: true, title: 'Pedido recebido', message: cleanText_(result.message), primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL) }
-    : { ok: false, title: 'Não foi possível concluir o pedido', message: cleanText_(result.message), primaryActionLabel: 'Voltar ao check-in', primaryActionUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL) };
-  return passwordResultPage_(content, settings);
-}
-
-function resetPasswordJsonp_(payload) {
-  const ss = getLabSpreadsheet_(false);
-  const settings = readSettingsMap_(ss);
-  const callback = sanitizeJsonpCallback_(payload.callback);
-  const result = processResetPasswordPayload_(ss, settings, payload);
-  return ContentService.createTextOutput(callback + '(' + JSON.stringify(result) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
-}
-
-function processResetPasswordPayload_(ss, settings, payload) {
-  ensureUsersSheetSchema_(ss, settings);
-  runTokenHousekeeping_(ss, settings, false);
-  const email = normalizeEmail_(payload.email);
-  const genericResponse = { ok: true, code: 'RESET_PASSWORD_REQUESTED', message: 'Se o email estiver ativo no sistema, enviaremos um link seguro para você definir uma nova senha.' };
-
-  if (!email) return genericResponse;
-  const userRecord = findUserByEmail_(ss, email);
-  if (!userRecord) return genericResponse;
-
-  const status = String(userRecord.status || '').toUpperCase();
-  if (status === 'PENDING_EMAIL') {
-    try {
-      const token = cleanText_(userRecord.email_confirmation_token) || generateId_('EML');
-      updateUserFields_(ss, userRecord._rowNumber, { updated_at: new Date(), email_confirmation_token: token, email_confirmation_sent_at: new Date() });
-      sendConfirmationEmail_(settings, email, userRecord.nome, token);
-    } catch (err) {}
-    return genericResponse;
-  }
-
-  if (status !== 'ACTIVE') return genericResponse;
-
-  try { issuePasswordSetupLinkForUser_(ss, settings, userRecord, 'Link para nova senha enviado sob solicitação'); } catch (err) {}
-  return genericResponse;
-}
-
-function setPassword_(payload) {
-  const result = processSetPasswordPayload_(payload);
-  return passwordResultPage_(result.content, result.settings);
-}
-
-function setPasswordJson_(payload) {
-  const result = processSetPasswordPayload_(payload);
-  const content = result && result.content ? result.content : {};
-  return jsonOut_({
-    ok: !!content.ok,
-    title: cleanText_(content.title || ''),
-    message: cleanText_(content.message || ''),
-    primaryActionLabel: cleanText_(content.primaryActionLabel || ''),
-    primaryActionUrl: cleanText_(content.primaryActionUrl || ''),
-    redirectUrl: cleanText_(content.primaryActionUrl || ''),
-    closeLabel: cleanText_(content.closeLabel || '')
-  });
-}
-
-function issuePasswordSetupLinkForUser_(ss, settings, userRecord, notes) {
-  const token = generateId_('PWD');
-  const now = new Date();
-  const ttlHours = readPositiveIntegerSetting_(settings.PASSWORD_SETUP_TOKEN_TTL_HOURS, 24, 1);
-  const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
-  updateUserFields_(ss, userRecord._rowNumber, { updated_at: now, auth_password_token: token, auth_password_token_sent_at: now, auth_password_token_expires_at: expiresAt });
-  sendPasswordSetupEmail_(settings, userRecord.email, userRecord.nome, token, ttlHours);
-  return { token: token, expiresAt: expiresAt };
-}
-
-function sendPasswordSetupEmail_(settings, email, nome, token, ttlHours) {
-  const projectName = settings.PROJECT_NAME || LAB_CFG.DEFAULTS.PROJECT_NAME;
-  const passwordSetupUrl = buildPasswordSetupUrl_(settings, email, token);
-  const subject = projectName + ' | Defina sua senha de acesso';
-  const participantName = cleanText_(nome) || 'participante';
-  const plainBody = [
-    'Olá, ' + participantName + '!',
-    '',
-    'Seu email já foi confirmado.',
-    'Agora você pode definir sua senha de acesso pelo link abaixo:',
-    passwordSetupUrl,
-    '',
-    'Este link expira em ' + ttlHours + ' hora(s).'
-  ].join('\n');
-  const htmlBody = buildEmailCardHtml_(settings, {
-    eyebrow: 'Definição de senha',
-    title: 'Escolha sua senha de acesso',
-    greeting: 'Olá, ' + participantName + '.',
-    paragraphs: [
-      'Seu email já foi confirmado com sucesso.',
-      'Agora você pode definir sua senha de acesso pelo botão abaixo.',
-      'Este link expira em ' + ttlHours + ' hora(s).'
-    ],
-    primaryLabel: 'Definir minha senha',
-    primaryUrl: passwordSetupUrl,
-    secondaryLabel: 'Voltar ao check-in',
-    secondaryUrl: cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL),
-    footerText: 'Se preferir, copie e cole o link direto exibido acima.'
-  });
-  MailApp.sendEmail({ to: email, subject: subject, body: plainBody, htmlBody: htmlBody, name: projectName });
-}
-
 function buildBrandedPageHtml_(settings, options) {
   const projectName = settings.PROJECT_NAME || LAB_CFG.DEFAULTS.PROJECT_NAME;
   const projectUrl = cleanText_(settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL);
-  const checkinUrl = cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL);
+  const checkinUrl = resolveCadastroUrl_(settings);
   const primaryUrl = cleanText_(options.primaryActionUrl || '') || checkinUrl || projectUrl;
   const secondaryUrl = cleanText_(options.secondaryActionUrl || '') || checkinUrl || projectUrl;
   const primaryLabel = cleanText_(options.primaryActionLabel || 'Continuar');
-  const secondaryLabel = cleanText_(options.secondaryActionLabel || 'Voltar ao check-in');
+  const secondaryLabel = cleanText_(options.secondaryActionLabel || 'Voltar ao cadastro');
   const eyebrow = cleanText_(options.eyebrow || (options.ok ? 'Acesso preparado' : 'Atenção'));
   const note = cleanText_(options.note || '');
   const logoUrl = getBrandLogoUrl_(settings);
@@ -1098,9 +983,9 @@ function buildBrandedPageHtml_(settings, options) {
 function buildDirectRedirectPageHtml_(settings, options) {
   const projectName = settings.PROJECT_NAME || LAB_CFG.DEFAULTS.PROJECT_NAME;
   const projectUrl = cleanText_(settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL);
-  const targetUrl = cleanText_(options.primaryActionUrl || settings.LAB_URL || LAB_CFG.DEFAULTS.LAB_URL || projectUrl);
+  const targetUrl = cleanText_(options.primaryActionUrl || resolveLabUrl_(settings) || projectUrl);
   const safeTargetUrl = isUsableUrl_(targetUrl) ? targetUrl : projectUrl;
-  const secondaryUrl = cleanText_(options.secondaryActionUrl || settings.LAB_URL || LAB_CFG.DEFAULTS.LAB_URL || projectUrl);
+  const secondaryUrl = cleanText_(options.secondaryActionUrl || resolveLabUrl_(settings) || projectUrl);
   const safeSecondaryUrl = isUsableUrl_(secondaryUrl) ? secondaryUrl : safeTargetUrl;
   const title = cleanText_(options.title || 'Redirecionando');
   const message = cleanText_(options.message || 'Seu acesso foi preparado. Você está sendo encaminhado ao laboratório.');
@@ -1138,7 +1023,7 @@ function confirmationPage_(content, settings) {
     eyebrow: content.ok ? 'Confirmação concluída' : 'Atenção',
     title: cleanText_(content.title || 'Confirmação de email'),
     message: cleanText_(content.message || 'Seu link foi processado.'),
-    primaryActionLabel: cleanText_(content.primaryActionLabel || 'Voltar ao check-in'),
+    primaryActionLabel: cleanText_(content.primaryActionLabel || 'Voltar ao cadastro'),
     primaryActionUrl: cleanText_(content.primaryActionUrl || settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL),
     secondaryActionLabel: cleanText_(content.secondaryActionLabel || 'Conhecer o projeto'),
     secondaryActionUrl: cleanText_(content.secondaryActionUrl || settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL)
@@ -1146,36 +1031,35 @@ function confirmationPage_(content, settings) {
   return HtmlService.createHtmlOutput(html).setTitle('Confirmação de email');
 }
 
-function passwordResultPage_(content, settings) {
+function accessResultPage_(content, settings) {
   if (content && content.ok) {
     const html = buildDirectRedirectPageHtml_(settings, {
-      title: cleanText_(content.title || 'Senha definida com sucesso'),
-      message: 'Sua senha foi salva com sucesso. Estamos abrindo o Laboratório Cordel 2.0 para você.',
+      title: cleanText_(content.title || 'Acesso confirmado'),
+      message: cleanText_(content.message || 'Seu acesso foi validado. Estamos abrindo o Laboratório Cordel 2.0 para você.'),
       primaryActionUrl: cleanText_(content.primaryActionUrl || settings.LAB_URL || LAB_CFG.DEFAULTS.LAB_URL),
       secondaryActionUrl: cleanText_(settings.LAB_URL || LAB_CFG.DEFAULTS.LAB_URL)
     });
-    return HtmlService.createHtmlOutput(html).setTitle(content.title || 'Senha definida com sucesso');
+    return HtmlService.createHtmlOutput(html).setTitle(content.title || 'Acesso confirmado');
   }
 
   const html = buildBrandedPageHtml_(settings, {
     ok: !!content.ok,
-    eyebrow: content.ok ? 'Senha salva com sucesso' : 'Ajuste necessário',
-    title: cleanText_(content.title || 'Definir senha'),
+    eyebrow: content.ok ? 'Acesso confirmado' : 'Ajuste necessário',
+    title: cleanText_(content.title || 'Validar acesso'),
     message: cleanText_(content.message || ''),
     primaryActionLabel: cleanText_(content.primaryActionLabel || 'Continuar'),
     primaryActionUrl: cleanText_(content.primaryActionUrl || settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL),
-    secondaryActionLabel: cleanText_(content.secondaryActionLabel || (content.ok ? 'Conhecer o projeto' : 'Voltar ao check-in')),
+    secondaryActionLabel: cleanText_(content.secondaryActionLabel || (content.ok ? 'Conhecer o projeto' : 'Voltar ao cadastro')),
     secondaryActionUrl: cleanText_(content.secondaryActionUrl || (content.ok ? settings.PROJECT_URL || LAB_CFG.DEFAULTS.PROJECT_URL : settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL)),
     note: content.ok ? 'Seu acesso já foi preparado. Se preferir, toque no botão para entrar agora no laboratório.' : '',
     autoRedirect: !!content.ok
   });
-  return HtmlService.createHtmlOutput(html).setTitle(content.title || 'Definir senha');
+  return HtmlService.createHtmlOutput(html).setTitle(content.title || 'Validar acesso');
 }
 
 function resolveCheckinBridgeUrl_(settings) {
   return cleanText_(
-    settings.CHECKIN_URL ||
-    LAB_CFG.DEFAULTS.CHECKIN_URL ||
+    resolveCadastroUrl_(settings) ||
     settings.WEB_APP_URL ||
     LAB_CFG.DEFAULTS.WEB_APP_URL ||
     ScriptApp.getService().getUrl() ||
@@ -1190,19 +1074,6 @@ function buildConfirmationUrl_(settings, email, token) {
     baseUrl +
     sep +
     'action=confirm&email=' +
-    encodeURIComponent(email) +
-    '&token=' +
-    encodeURIComponent(token)
-  );
-}
-
-function buildPasswordSetupUrl_(settings, email, token) {
-  const baseUrl = resolveCheckinBridgeUrl_(settings);
-  const sep = baseUrl.indexOf('?') >= 0 ? '&' : '?';
-  return (
-    baseUrl +
-    sep +
-    'action=set_password&email=' +
     encodeURIComponent(email) +
     '&token=' +
     encodeURIComponent(token)
@@ -1524,7 +1395,7 @@ function getLabSpreadsheet_(allowCreate) {
   }
 
   if (!allowCreate) throw new Error('Nenhuma planilha vinculada encontrada.');
-  const ss = SpreadsheetApp.create((LAB_CFG.DEFAULTS.PROJECT_NAME || 'Laboratório') + ' | Check-in');
+  const ss = SpreadsheetApp.create((LAB_CFG.DEFAULTS.PROJECT_NAME || 'Laboratório') + ' | Cadastro');
   props.setProperty(LAB_CFG.PROPERTIES.SPREADSHEET_ID, ss.getId());
   return ss;
 }
@@ -1580,31 +1451,6 @@ function sha256_(text) {
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, text, Utilities.Charset.UTF_8);
   return bytes.map(function(b) { const v = (b < 0 ? b + 256 : b).toString(16); return v.length === 1 ? '0' + v : v; }).join('');
 }
-function generatePassword_(length) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*?';
-  const size = Math.max(12, Number(length || 14));
-  let out = '';
-  for (let i = 0; i < size; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
-  return out;
-}
-function normalizeAccessPassword_(value) { return normalizeUnicodeText_(value).trim().replace(/[\s-]+/g, '').toUpperCase(); }
-function generateAccessPassword_(length) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const size = Math.max(12, Number(length || 16));
-  let out = '';
-  for (let i = 0; i < size; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
-  return out;
-}
-function formatAccessPassword_(value) { return String(value || '').match(/.{1,4}/g).join('-'); }
-function validateAccessPassword_(password, confirmation) {
-  const p = normalizeUnicodeText_(password).trim(), c = normalizeUnicodeText_(confirmation).trim();
-  if (!p || !c) return 'Preencha e confirme sua nova senha.';
-  if (p !== c) return 'Os dois campos de senha precisam ser iguais.';
-  if (p.length < 10) return 'Sua senha precisa ter pelo menos 10 caracteres.';
-  if (!hasLetterCharacter_(p) || !/\d/.test(p)) return 'Use ao menos uma letra e um número na nova senha.';
-  return '';
-}
-function hasLetterCharacter_(value) { const text = String(value || ''); try { return new RegExp('\\p{L}', 'u').test(text); } catch (e) { return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(text); } }
 function isExpiredDateValue_(value) { if (!value) return true; const date = value instanceof Date ? value : new Date(value); return String(date) === 'Invalid Date' ? true : date.getTime() < new Date().getTime(); }
 function isUsableUrl_(value) { return /^https?:\/\//i.test(String(value || '').trim()); }
 function htmlEscape_(value) { return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -1617,7 +1463,7 @@ function processSignupPayload_(ss, settings, payload, source) {
   const nome = cleanText_(payload.nome), email = normalizeEmail_(payload.email), birthRaw = cleanText_(payload.dataAniversario), birthIso = parseBirthDateToIso_(birthRaw);
   const instituicao = cleanText_(payload.instituicao), oficinasCordel = normalizeSimNao_(payload.oficinasCordel), telefoneDigits = normalizePhone_(payload.telefone);
   const consentAccepted = toBoolean_(payload.consentAccepted), termsVersion = cleanText_(payload.termsVersion || settings.TERMS_VERSION);
-  const page = cleanText_(payload.page || 'checkin'), userAgent = cleanText_(payload.userAgent || ''), flowSource = cleanText_(source || 'custom_checkin_form'), now = new Date();
+  const page = cleanText_(payload.page || 'cadastro'), userAgent = cleanText_(payload.userAgent || ''), flowSource = cleanText_(source || 'native_cadastro_form'), now = new Date();
   
   const denySignup = function(code, message, details) {
     logAccess_(ss, 'signup', email, 'DENIED', code, page, flowSource, userAgent, details || message || '');
@@ -1640,92 +1486,36 @@ function processSignupPayload_(ss, settings, payload, source) {
   const existingUser = findUserByEmail_(ss, email);
   if (existingUser) {
     logAccess_(ss, 'signup', email, 'DENIED', 'EMAIL_JA_CADASTRADO', page, flowSource, userAgent, 'user_id=' + cleanText_(existingUser.user_id));
-    return { ok: false, code: 'EMAIL_JA_CADASTRADO', message: 'Ja existe um registro com este email. Use a aba Entrar.' };
+    return { ok: false, code: 'EMAIL_JA_CADASTRADO', message: 'Ja existe um registro com este email.' };
   }
 
-  const userId = generateId_('USR'), token = generateId_('EML');
+  const userId = generateId_('USR');
   appendObjectRow_(ss.getSheetByName(LAB_CFG.SHEETS.USERS), {
-    user_id: userId, created_at: now, updated_at: now, status: 'PENDING_EMAIL', nome: nome, email: email,
+    user_id: userId, created_at: now, updated_at: now, status: 'ACTIVE', nome: nome, email: email,
     faixa_etaria_cadastro: audience.faixaEtaria, is_minor: audience.isMinor, instituicao: instituicao,
     oficinas_cordel: oficinasCordel, phone_hash: sha256_(telefoneDigits), phone_last4: telefoneDigits.slice(-4),
     consent_current_version: termsVersion, consent_current_at: now, source_page: page, signup_source: flowSource, signup_at: now,
-    email_confirmed_at: '', email_confirmation_token: token, email_confirmation_sent_at: now, auth_password_hash: '',
-    auth_password_updated_at: '', auth_password_token: '', auth_password_token_sent_at: '', auth_password_token_expires_at: '',
-    welcome_email_template: audience.welcomeTemplate, welcome_email_sent_at: '', notes: 'Aguardando confirmacao de email.'
+    email_confirmed_at: now, email_confirmation_token: '', email_confirmation_sent_at: '',
+    welcome_email_template: audience.welcomeTemplate, welcome_email_sent_at: '', notes: 'Cadastro ativo após aceite do termo.'
   });
   logConsent_(ss, 'signup', userId, email, termsVersion, true, page, flowSource, userAgent, 'Consentimento no cadastro');
   
   try {
-    sendConfirmationEmail_(settings, email, nome, token);
-    logAccess_(ss, 'signup', email, 'PENDING', 'EMAIL_CONFIRMATION_SENT', page, flowSource, userAgent, 'classificacao=' + audience.faixaEtaria);
-  } catch (err) {
-    logAccess_(ss, 'signup', email, 'ERROR', 'ENVIO_EMAIL_FALHOU', page, flowSource, userAgent, String(err));
-    return { ok: false, code: 'ENVIO_EMAIL_FALHOU', message: 'Cadastro salvo, mas nao foi possivel enviar confirmacao. Tente depois.' };
-  }
-  return { ok: true, code: 'SIGNUP_PENDING_EMAIL', message: 'Cadastro recebido. Enviamos um link de confirmacao para seu email.', userId: userId };
-}
-
-function processSetPasswordPayload_(payload) {
-  const ss = getLabSpreadsheet_(false), settings = readSettingsMap_(ss);
-  ensureUsersSheetSchema_(ss, settings);
-  runTokenHousekeeping_(ss, settings, false);
-  const email = normalizeEmail_(payload.email), token = cleanText_(payload.token), senha = cleanText_(payload.senha), senhaConfirmacao = cleanText_(payload.senhaConfirmacao), page = cleanText_(payload.page || 'set_password');
-  const setupUrl = buildPasswordSetupUrl_(settings, email, token);
-  
-  const denyResponse = function(title, msg, primaryActionLabel, primaryActionUrl) {
-    return {
-      settings: settings,
-      content: {
-        ok: false,
-        title: title,
-        message: msg,
-        primaryActionLabel: cleanText_(primaryActionLabel) || 'Voltar ao check-in',
-        primaryActionUrl: cleanText_(primaryActionUrl) || cleanText_(settings.CHECKIN_URL || LAB_CFG.DEFAULTS.CHECKIN_URL),
-        closeLabel: 'Fechar janela'
-      }
-    };
-  };
-
-  if (!email || !token) return denyResponse('Link de senha invalido', 'O link está incompleto ou expirado.');
-  const userRecord = findUserByEmail_(ss, email);
-  if (!userRecord) return denyResponse('Cadastro não encontrado', 'Não localizamos um cadastro compatível.');
-  
-  const isFirstPasswordDefinition = !cleanText_(userRecord.auth_password_hash) && !cleanText_(userRecord.welcome_email_sent_at);
-  if (String(userRecord.status || '').toUpperCase() !== 'ACTIVE') return denyResponse('Cadastro ainda não está ativo', 'Confirme primeiro o email.');
-  if (cleanText_(userRecord.auth_password_token) !== token) return denyResponse('Token de senha invalido', 'O link não corresponde a solicitação atual.');
-  
-  if (isExpiredDateValue_(userRecord.auth_password_token_expires_at)) {
-    updateUserFields_(ss, userRecord._rowNumber, { auth_password_token: '', auth_password_token_sent_at: '', auth_password_token_expires_at: '', updated_at: new Date() });
-    return denyResponse('Link expirado', 'O prazo deste link terminou.');
-  }
-
-  if (!senha || !senhaConfirmacao) {
-    return denyResponse(
-      'Defina sua senha no formulÃ¡rio seguro',
-      'Abra o formulÃ¡rio de senha para preencher e confirmar sua nova senha.',
-      'Abrir formulÃ¡rio de senha',
-      setupUrl
-    );
-  }
-
-  const validationMessage = validateAccessPassword_(senha, senhaConfirmacao);
-  if (validationMessage) return denyResponse('Sua senha precisa de ajuste', validationMessage);
-
-  updateUserFields_(ss, userRecord._rowNumber, { updated_at: new Date(), auth_password_hash: sha256_(normalizeAccessPassword_(senha)), auth_password_updated_at: new Date(), auth_password_token: '', auth_password_token_sent_at: '', auth_password_token_expires_at: '', notes: 'Senha definida pelo proprio usuario.' });
-  
-  let welcomeTemplate = '';
-  if (isFirstPasswordDefinition) {
-    welcomeTemplate = resolveWelcomeEmailTemplate_(userRecord);
-    if (welcomeTemplate) {
-      try {
-        sendWelcomeEmail_(settings, email, userRecord.nome, welcomeTemplate);
-        updateUserFields_(ss, userRecord._rowNumber, { updated_at: new Date(), welcome_email_template: welcomeTemplate, welcome_email_sent_at: new Date() });
-      } catch (err) {}
+    sendWelcomeEmail_(settings, email, nome, audience.welcomeTemplate);
+    const savedUserRecord = findUserByEmail_(ss, email);
+    if (savedUserRecord) {
+      updateUserFields_(ss, savedUserRecord._rowNumber, { updated_at: new Date(), welcome_email_sent_at: new Date(), notes: 'Cadastro ativo; email de boas-vindas enviado.' });
     }
+    logAccess_(ss, 'signup', email, 'ALLOWED', 'WELCOME_EMAIL_SENT', page, flowSource, userAgent, 'classificacao=' + audience.faixaEtaria);
+  } catch (err) {
+    logAccess_(ss, 'signup', email, 'ERROR', 'ENVIO_BOAS_VINDAS_FALHOU', page, flowSource, userAgent, String(err));
+    return { ok: false, code: 'ENVIO_BOAS_VINDAS_FALHOU', message: 'Cadastro salvo, mas nao foi possivel enviar o email de boas-vindas. Tente depois.' };
   }
-
-  const labAccess = issueLabAccessToken_(settings, email, userRecord.user_id || '');
-  logAccess_(ss, 'set_password', email, 'ALLOWED', 'OK', page, 'site', '', 'Senha gravada com sucesso');
-  
-  return { settings: settings, content: { ok: true, title: 'Senha definida com sucesso', message: 'Sua senha foi salva. Estamos preparando sua entrada segura no laboratório.', primaryActionLabel: 'Ir para o laboratório', primaryActionUrl: buildLabEntryUrl_(settings, labAccess.token), closeLabel: 'Fechar janela' } };
+  return {
+    ok: true,
+    code: 'SIGNUP_WELCOME_SENT',
+    message: 'Cadastro recebido. Enviamos o email de boas-vindas e vamos direcionar você ao laboratório.',
+    userId: userId,
+    redirectUrl: resolveLabUrl_(settings)
+  };
 }

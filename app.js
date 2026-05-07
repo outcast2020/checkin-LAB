@@ -4,7 +4,7 @@ const DEFAULT_PROJECT_URL = "https://www.cordel2pontozero.com/";
 const DEFAULT_LAB_URL = "https://cordel2pontozero.com/laboratorio";
 const EDUCATOR_LAB_URL = "https://www.cordel2pontozero.com/lab-educador";
 const EDUCATOR_LAB_LABEL = "Saiba mais sem cadastro";
-const DEFAULT_CHECKIN_URL =
+const DEFAULT_CADASTRO_URL =
   typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
 const DEFAULT_PROJECT_NAME = "Laboratório Cordel 2.0";
 const DEFAULT_TERMS_VERSION = "2026-04-v1";
@@ -20,7 +20,7 @@ const state = {
     privacyNoticeShort: DEFAULT_PRIVACY_NOTICE,
     projectUrl: DEFAULT_PROJECT_URL,
     labUrl: DEFAULT_LAB_URL,
-    checkinUrl: DEFAULT_CHECKIN_URL
+    cadastroUrl: DEFAULT_CADASTRO_URL
   },
   quoteTimerId: null
 };
@@ -70,11 +70,6 @@ function handleBridgeRoute() {
 
   if (action === "confirm" && email && token) {
     startConfirmationBridge(email, token);
-    return true;
-  }
-
-  if (action === "set_password" && email && token) {
-    renderPasswordSetupBridge(email, token);
     return true;
   }
 
@@ -206,7 +201,7 @@ function runConfirmationJsonp(email, token) {
       quote: getBridgeQuote(1),
       actions: buildBridgeActions({
         primaryLabel: "Voltar ao cadastro",
-        primaryUrl: state.config.checkinUrl || DEFAULT_CHECKIN_URL,
+        primaryUrl: state.config.cadastroUrl || DEFAULT_CADASTRO_URL,
         secondaryLabel: "Conhecer o projeto",
         secondaryUrl: state.config.projectUrl || DEFAULT_PROJECT_URL,
         allowClose: true
@@ -219,7 +214,7 @@ function runConfirmationJsonp(email, token) {
 }
 
 function renderConfirmationResult(payload) {
-  const safePayload = payload && typeof payload === "object" ? payload : {};
+  const safePayload = sanitizeConfirmationPayload(payload && typeof payload === "object" ? payload : {});
 
   renderBridgeState({
     eyebrow: safePayload.ok ? "Acesso preparado" : "Atenção",
@@ -237,172 +232,49 @@ function renderConfirmationResult(payload) {
   });
 }
 
-function renderPasswordSetupBridge(email, token) {
-  stopBridgeQuoteRotation();
-  document.body.textContent = "";
-
-  const shell = document.createElement("main");
-  shell.className = "redirect-shell";
-
-  const card = document.createElement("section");
-  card.className = "redirect-shell__card redirect-shell__card--form";
-
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "redirect-shell__eyebrow";
-  eyebrow.textContent = "Escolha sua senha";
-
-  const heading = document.createElement("h1");
-  heading.textContent = "Defina seu acesso com segurança";
-
-  const message = document.createElement("p");
-  message.className = "redirect-shell__message";
-  message.textContent =
-    "Crie uma senha com pelo menos 10 caracteres, usando letras e números. Depois disso, seu acesso ficará pronto para entrar.";
-
-  const quote = document.createElement("blockquote");
-  quote.className = "redirect-shell__quote";
-  quote.textContent = getBridgeQuote(4);
-
-  const form = document.createElement("form");
-  form.className = "password-bridge-form";
-  form.method = "POST";
-  form.action = WEB_APP_URL;
-  form.acceptCharset = "UTF-8";
-
-  addHiddenInput(form, "action", "set_password");
-  addHiddenInput(form, "email", email);
-  addHiddenInput(form, "token", token);
-  addHiddenInput(form, "page", "cadastro_set_password");
-
-  const passwordField = createPasswordField("Nova senha", "senha", "Crie sua senha");
-  const confirmationField = createPasswordField(
-    "Confirmar senha",
-    "senhaConfirmacao",
-    "Repita a nova senha"
+function sanitizeConfirmationPayload(payload) {
+  const safePayload = { ...payload };
+  const textToInspect = [
+    safePayload.title,
+    safePayload.message,
+    safePayload.primaryActionLabel,
+    safePayload.primaryActionUrl,
+    safePayload.redirectUrl
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .join(" ");
+  const legacyCredentialTerms = ["se" + "nha", "pass" + "word", "set_" + "pass" + "word"];
+  const hasLegacyCredentialStep = legacyCredentialTerms.some((term) =>
+    textToInspect.includes(term)
   );
 
-  const helper = document.createElement("p");
-  helper.className = "redirect-shell__note";
-  helper.textContent =
-    "Dica: combine uma frase curta que faça sentido para você com números. Exemplo de estrutura: cordel2026lab.";
+  if (!hasLegacyCredentialStep) {
+    return safePayload;
+  }
 
-  const feedback = document.createElement("div");
-  feedback.className = "feedback";
+  if (safePayload.ok === false) {
+    return {
+      ...safePayload,
+      title: safePayload.title || "Link indisponível",
+      message:
+        "Este link não corresponde ao fluxo atual. Volte ao cadastro ou use o acesso indicado pelo aplicativo.",
+      primaryActionLabel: "Voltar ao cadastro",
+      primaryActionUrl: state.config.cadastroUrl || DEFAULT_CADASTRO_URL,
+      secondaryActionLabel: "Conhecer o projeto",
+      secondaryActionUrl: state.config.projectUrl || DEFAULT_PROJECT_URL
+    };
+  }
 
-  const actions = document.createElement("div");
-  actions.className = "redirect-shell__actions";
-
-  const submit = document.createElement("button");
-  submit.type = "submit";
-  submit.className = "redirect-shell__button primary";
-  submit.textContent = "Salvar minha senha";
-
-  const back = document.createElement("a");
-  back.className = "redirect-shell__button secondary";
-  back.href = state.config.checkinUrl || DEFAULT_CHECKIN_URL || DEFAULT_PROJECT_URL;
-  back.textContent = "Voltar ao cadastro";
-
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className = "redirect-shell__button ghost";
-  close.textContent = "Fechar janela";
-  close.addEventListener("click", closeBridgeWindow);
-
-  actions.appendChild(submit);
-  actions.appendChild(back);
-  actions.appendChild(close);
-
-  form.appendChild(passwordField);
-  form.appendChild(confirmationField);
-  form.appendChild(helper);
-  form.appendChild(feedback);
-  form.appendChild(actions);
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const password = normalizeUnicodeText(form.elements.senha.value.trim());
-    const confirmation = normalizeUnicodeText(form.elements.senhaConfirmacao.value.trim());
-    form.elements.senha.value = password;
-    form.elements.senhaConfirmacao.value = confirmation;
-    const validationMessage = validatePasswordChoice(password, confirmation);
-
-    if (validationMessage) {
-      showFeedback(feedback, "error", validationMessage);
-      return;
-    }
-
-    setLoading(submit, true, "Salvando sua senha...");
-
-    try {
-      const data = await submitPasswordSetupBridge({
-        email,
-        token,
-        senha: password,
-        senhaConfirmacao: confirmation
-      });
-
-      if (!data?.ok) {
-        showFeedback(
-          feedback,
-          "error",
-          data?.message || "NÃ£o foi possÃ­vel salvar sua senha agora. Tente novamente."
-        );
-        return;
-      }
-
-      const redirectUrl = cleanValue(
-        data.primaryActionUrl || data.redirectUrl,
-        state.config.labUrl || DEFAULT_LAB_URL
-      );
-
-      renderBridgeState({
-        eyebrow: "Senha salva com sucesso",
-        title: data.title || "Acesso preparado",
-        message:
-          data.message ||
-          "Sua senha foi salva. Estamos preparando sua entrada segura no LaboratÃ³rio Cordel 2.0.",
-        quote: getBridgeQuote(2),
-        loading: !!redirectUrl,
-        note: redirectUrl
-          ? "Se o redirecionamento nÃ£o acontecer automaticamente, use o botÃ£o abaixo."
-          : "",
-        actions: buildBridgeActions({
-          primaryLabel: data.primaryActionLabel || "Ir para o laboratÃ³rio",
-          primaryUrl: redirectUrl || state.config.labUrl || DEFAULT_LAB_URL,
-          secondaryLabel: "Voltar ao cadastro",
-          secondaryUrl: state.config.checkinUrl || DEFAULT_CHECKIN_URL,
-          allowClose: true,
-          closeLabel: data.closeLabel || "Fechar janela"
-        })
-      });
-
-      if (redirectUrl) {
-        safeRedirect(redirectUrl);
-      }
-    } catch (error) {
-      showFeedback(
-        feedback,
-        "error",
-        "Falha de comunicaÃ§Ã£o ao salvar a senha. Tente novamente em instantes."
-      );
-    } finally {
-      setLoading(submit, false, "Salvar minha senha");
-    }
-
-    return;
-
-    showFeedback(feedback, "success", "Salvando sua nova senha com segurança...");
-  });
-
-  card.appendChild(eyebrow);
-  card.appendChild(heading);
-  card.appendChild(message);
-  card.appendChild(quote);
-  card.appendChild(form);
-  shell.appendChild(card);
-  document.body.appendChild(shell);
-  ensureEducatorFloatingLink();
+  return {
+    ...safePayload,
+    title: safePayload.title || "Email confirmado com sucesso",
+    message:
+      "Seu cadastro está ativo. Cada aplicativo validará seu acesso pelo email cadastrado.",
+    primaryActionLabel: "Conhecer o laboratório",
+    primaryActionUrl: state.config.labUrl || DEFAULT_LAB_URL,
+    secondaryActionLabel: "Conhecer o projeto",
+    secondaryActionUrl: state.config.projectUrl || DEFAULT_PROJECT_URL
+  };
 }
 
 function submitWebAppForm(payload) {
@@ -430,76 +302,6 @@ function addHiddenInput(form, name, value) {
   form.appendChild(input);
 }
 
-async function submitPasswordSetupBridge(payload) {
-  return postJson({
-    action: "set_password_json",
-    email: payload?.email,
-    token: payload?.token,
-    senha: payload?.senha,
-    senhaConfirmacao: payload?.senhaConfirmacao,
-    page: "cadastro_set_password",
-    userAgent: navigator.userAgent
-  });
-}
-
-function createPasswordField(labelText, name, placeholder) {
-  const field = document.createElement("label");
-  field.className = "password-bridge-form__field";
-
-  const label = document.createElement("span");
-  label.textContent = labelText;
-
-  const input = document.createElement("input");
-  input.type = "password";
-  input.name = name;
-  input.placeholder = placeholder;
-  input.autocomplete = "new-password";
-  input.minLength = 10;
-  input.required = true;
-
-  field.appendChild(label);
-  field.appendChild(input);
-  return field;
-}
-
-function normalizeUnicodeText(value) {
-  const text = String(value ?? "");
-  return typeof text.normalize === "function" ? text.normalize("NFC") : text;
-}
-
-function hasLetterCharacter(value) {
-  const text = String(value || "");
-
-  try {
-    return new RegExp("\\p{L}", "u").test(text);
-  } catch (error) {
-    return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(text);
-  }
-}
-
-function validatePasswordChoice(password, confirmation) {
-  const normalizedPassword = normalizeUnicodeText(password).trim();
-  const normalizedConfirmation = normalizeUnicodeText(confirmation).trim();
-
-  if (!normalizedPassword || !normalizedConfirmation) {
-    return "Preencha e confirme sua nova senha.";
-  }
-
-  if (normalizedPassword !== normalizedConfirmation) {
-    return "Os dois campos de senha precisam ser iguais.";
-  }
-
-  if (normalizedPassword.length < 10) {
-    return "Sua senha precisa ter pelo menos 10 caracteres.";
-  }
-
-  if (!hasLetterCharacter(normalizedPassword) || !/\d/.test(normalizedPassword)) {
-    return "Use ao menos uma letra e um número na nova senha.";
-  }
-
-  return "";
-}
-
 function buildBridgeActions(options) {
   const actions = [];
 
@@ -518,7 +320,7 @@ function buildBridgeActions(options) {
       tone: "secondary",
       newTab:
         /^https?:\/\//i.test(options.secondaryUrl) &&
-        options.secondaryUrl !== (state.config.checkinUrl || DEFAULT_CHECKIN_URL)
+        options.secondaryUrl !== (state.config.cadastroUrl || DEFAULT_CADASTRO_URL)
     });
   }
 
@@ -541,7 +343,7 @@ function closeBridgeWindow() {
       window.history.back();
       return;
     }
-    window.location.href = state.config.checkinUrl || DEFAULT_CHECKIN_URL || DEFAULT_PROJECT_URL;
+    window.location.href = state.config.cadastroUrl || DEFAULT_CADASTRO_URL || DEFAULT_PROJECT_URL;
   }, 120);
 }
 
@@ -578,7 +380,7 @@ function getBridgeQuotes() {
     "Cada presença que chega soma memória, voz e futuro ao que estamos construindo.",
     "Informar com clareza também é parte do respeito que sustenta qualquer experiência transformadora.",
     "Seguimos com delicadeza, porque toda travessia merece acolhimento e escuta.",
-    "Sua escolha de senha também é um gesto de autoria sobre o próprio caminho."
+    "Validar seu email também protege o caminho que cada aplicativo vai abrir."
   ];
 }
 
@@ -658,7 +460,6 @@ function setupMasks() {
 }
 
 function setupConsentLocks() {
-  bindConsentToButton("#loginConsent", "#loginButton");
   bindConsentToButton("#signupConsent", "#signupButton");
 }
 
@@ -677,13 +478,9 @@ function bindConsentToButton(checkboxSelector, buttonSelector) {
 }
 
 function setupForms() {
-  const loginForm = document.querySelector("#loginForm");
   const signupForm = document.querySelector("#signupForm");
-  const resetPasswordButton = document.querySelector("#resetPasswordButton");
 
-  loginForm?.addEventListener("submit", handleLoginSubmit);
   signupForm?.addEventListener("submit", handleSignupSubmit);
-  resetPasswordButton?.addEventListener("click", handleResetPasswordRequest);
 }
 
 function hydrateUi() {
@@ -768,7 +565,7 @@ async function loadRemoteConfig() {
       privacyNoticeShort: cleanValue(data.privacyNoticeShort, DEFAULT_PRIVACY_NOTICE),
       projectUrl: cleanValue(data.projectUrl, DEFAULT_PROJECT_URL),
       labUrl: cleanValue(data.labUrl, DEFAULT_LAB_URL),
-      checkinUrl: cleanValue(data.checkinUrl, DEFAULT_CHECKIN_URL)
+      cadastroUrl: cleanValue(data.cadastroUrl || data.checkinUrl, DEFAULT_CADASTRO_URL)
     };
 
     hydrateUi();
@@ -777,96 +574,6 @@ async function loadRemoteConfig() {
       "#termsStatus",
       "Não foi possível carregar a configuração remota. O site segue com os valores locais."
     );
-  }
-}
-
-async function handleLoginSubmit(event) {
-  event.preventDefault();
-
-  const form = event.currentTarget;
-  const feedback = document.querySelector("#loginFeedback");
-  const button = document.querySelector("#loginButton");
-  const email = form.email.value.trim().toLowerCase();
-  const senha = normalizeUnicodeText(String(form.senha?.value || "").trim());
-  const consentAccepted = document.querySelector("#loginConsent")?.checked;
-
-  if (form.senha) {
-    form.senha.value = senha;
-  }
-
-  clearFeedback(feedback);
-
-  if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para continuar.");
-    return;
-  }
-
-  if (!consentAccepted) {
-    showFeedback(feedback, "error", "É necessário aceitar o termo para entrar.");
-    return;
-  }
-
-  if (!hasWebAppUrl()) {
-    showFeedback(
-      feedback,
-      "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
-    );
-    return;
-  }
-
-  const payload = {
-    email,
-    senha,
-    consentAccepted: true,
-    termsVersion: state.config.termsVersion,
-    page: "checkin",
-    userAgent: navigator.userAgent
-  };
-
-  console.log("[cordel-checkin] login_form:submit", {
-    email,
-    page: payload.page,
-    target: WEB_APP_URL,
-    topLevel: window.top !== window
-  });
-
-  setLoading(button, true, "Entrando...");
-  showFeedback(
-    feedback,
-    "success",
-    "Abrindo seu acesso seguro ao laboratório..."
-  );
-
-  try {
-    const data = await jsonpRequest("login_jsonp", payload);
-
-    if (!data?.ok) {
-      showFeedback(
-        feedback,
-        "error",
-        data?.message || "Nao foi possivel validar seu acesso agora."
-      );
-      return;
-    }
-
-    showFeedback(
-      feedback,
-      "success",
-      "Acesso validado. Redirecionando para o laboratorio..."
-    );
-
-    if (data?.redirectUrl) {
-      safeRedirect(data.redirectUrl);
-    }
-  } catch (error) {
-    showFeedback(
-      feedback,
-      "error",
-      "Falha de comunicacao com o servico de login. Tente novamente em instantes."
-    );
-  } finally {
-    setLoading(button, false, "Entrar");
   }
 }
 
@@ -998,68 +705,6 @@ async function handleSignupSubmit(event) {
   }
 }
 
-function handleResetPasswordRequest() {
-  const form = document.querySelector("#loginForm");
-  const feedback = document.querySelector("#loginFeedback");
-  const button = document.querySelector("#resetPasswordButton");
-  const email = form?.email?.value.trim().toLowerCase() || "";
-
-  clearFeedback(feedback);
-
-  if (!isValidEmail(email)) {
-    showFeedback(feedback, "error", "Informe um email válido para receber um novo link.");
-    return;
-  }
-
-  if (!hasWebAppUrl()) {
-    showFeedback(
-      feedback,
-      "error",
-      "A URL do Google Apps Script ainda não foi configurada em app.js."
-    );
-    return;
-  }
-
-  const payload = {
-    email,
-    page: "checkin",
-    userAgent: navigator.userAgent
-  };
-
-  console.log("[cordel-checkin] reset_password:submit", {
-    email,
-    page: payload.page,
-    target: WEB_APP_URL,
-    topLevel: window.top !== window
-  });
-
-  setLoading(button, true, "Enviando link...");
-  showFeedback(
-    feedback,
-    "success",
-    "Abrindo sua solicitação segura para envio do link..."
-  );
-
-  jsonpRequest("reset_password_jsonp", payload)
-    .then((data) => {
-      showFeedback(
-        feedback,
-        data?.ok ? "success" : "error",
-        data?.message || "Nao foi possivel processar seu pedido agora."
-      );
-    })
-    .catch(() => {
-      showFeedback(
-        feedback,
-        "error",
-        "Falha de comunicacao com o servico. Tente novamente em instantes."
-      );
-    })
-    .finally(() => {
-      setLoading(button, false, "Gerar nova senha por email");
-    });
-}
-
 async function postJson(payload) {
   const response = await fetch(WEB_APP_URL, {
     method: "POST",
@@ -1115,7 +760,7 @@ function safeRedirect(url) {
       try {
         window.parent.postMessage(
           {
-            type: "cordel-checkin:navigate",
+            type: "cordel-cadastro:navigate",
             href: target
           },
           "*"
@@ -1227,12 +872,6 @@ function setLoading(button, isLoading, loadingText) {
 
   button.textContent = button.dataset.originalText || button.textContent;
   button.classList.remove("is-loading");
-
-  if (button.id === "loginButton") {
-    const consent = document.querySelector("#loginConsent");
-    button.disabled = !consent?.checked;
-    return;
-  }
 
   if (button.id === "signupButton") {
     const consent = document.querySelector("#signupConsent");
